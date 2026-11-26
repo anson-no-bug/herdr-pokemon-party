@@ -129,7 +129,11 @@ export default class EmbeddedBattle {
     this.selMove = 0; // Keyboard-selected move index (0..3 in 2x2 GBA grid)
     this.turn = 1;
     this.phase = "intro"; // "intro" -> "choose" -> "animating" -> "victory"
-    this.introSlide = false;
+    this.introStage = 0;  // 0: off-edge -> 1: charge to center clash -> 2: spark + rebound -> 3: settled
+    this.introVsState = 0; // 0: above -> 1: slamming down overshoot -> 2: locked at center
+    this.introShakeX = 0;
+    this.introShakeY = 0;
+    this.introFlash = false;
     this.winner = null; // "p1" | "cpu"
     this.logText = "";
     this.activeFx = null;   // { id, gif, w, h, anchor, isP1 } authentic GBA pixel-art animated GIF!
@@ -138,6 +142,7 @@ export default class EmbeddedBattle {
     this.stageShake = 0;    // px horizontal shake for heavy hits & Earthquake!
     this.popups = [];
     this.seq = 1;
+    this.introSparkId = `intro-spark-${this.seq++}`;
     this.closed = false;
 
     const termMap = new Map(terminals().map((t) => [t.address, t]));
@@ -152,12 +157,53 @@ export default class EmbeddedBattle {
 
     if (checking()) return;
 
-    cx.timer.after(30, (cx) => {
-      if (this.closed) return;
-      this.introSlide = true;
-      cx.notify();
+    // 4-Beat Fighting-Game Clash Cut-In:
+    //   45ms  -> Both Pokemon dash inward from left & right edges toward dead center
+    //   245ms -> CLASH! Pixel starburst spark explodes at center + flash + shake + both rebound to resting stances
+    //   275ms -> Metallic VS emblem slams down from above onto the impact point
+    //   430ms -> VS lands with vertical thud + settles; 860ms spark finishes cleanly; 1950ms enter battle!
+    const introBeat = (ms, fn) => {
+      cx.timer.after(ms, (cx) => {
+        if (this.closed || this.phase !== "intro") return;
+        fn(cx);
+        cx.notify();
+      });
+    };
+    introBeat(45, () => {
+      this.introStage = 1;
     });
-    cx.timer.after(1550, (cx) => {
+    introBeat(245, () => {
+      this.introStage = 2;
+      this.introFlash = true;
+      this.introShakeX = 8;
+    });
+    introBeat(275, () => {
+      this.introVsState = 1;
+    });
+    introBeat(325, () => {
+      this.introFlash = false;
+      this.introShakeX = -6;
+    });
+    introBeat(395, () => {
+      this.introShakeX = 3;
+    });
+    introBeat(430, () => {
+      this.introVsState = 2;
+      this.introShakeX = 0;
+      this.introShakeY = 6;
+      this.introFlash = true;
+    });
+    introBeat(495, () => {
+      this.introFlash = false;
+      this.introShakeY = -2;
+    });
+    introBeat(565, () => {
+      this.introShakeY = 0;
+    });
+    introBeat(860, () => {
+      this.introStage = 3;
+    });
+    cx.timer.after(1950, (cx) => {
       if (this.closed || this.phase !== "intro") return;
       this.enterChoosePhase(cx);
     });
@@ -596,28 +642,43 @@ export default class EmbeddedBattle {
     return div().text_size(13).font_bold().text_color("#ffffff").child(f.name.slice(0, 2));
   }
 
-  // Clean, Restrained GBA-Framed VS Showdown Plaque over Dimmed Current Habitat Backdrop
+  // Dynamic Clash Cut-In: Left/Right Pokemon Collide -> Pixel Spark Burst + Rebound -> Slamming VS Emblem
   renderIntro(cx, width, height) {
-    const slide = this.introSlide;
+    const stage = this.introStage;
     const mapBox = computeMapBox(width, height);
     const panelW = Math.min(width - 28, 412);
     const panelH = Math.min(height - 20, 168);
+    const panelLeft = Math.round((width - panelW) / 2);
+    const panelTop = Math.round((height - panelH) / 2);
     const portSz = Math.max(66, Math.min(80, panelH - 86));
     const cardW = portSz + 32;
+    const midX = Math.round(panelW / 2);
     const leftTarget = 24;
     const rightTarget = panelW - cardW - 24;
+    const leftClash = midX - cardW + 16;
+    const rightClash = midX - 16;
     const cardTop = Math.max(12, Math.round((panelH - (portSz + 46)) / 2) - 4);
+    const sparkSz = 128;
+    const sparkLeft = midX - Math.round(sparkSz / 2);
+    const sparkTop = cardTop + Math.round((portSz + 8) / 2) - Math.round(sparkSz / 2);
 
-    const fighterCard = (id, f, isP1, targetLeft, startLeft) =>
-      v_flex()
+    const cardLeftPolicy = stage === 1
+      ? { duration: 200, easing: "ease-in" }
+      : { duration: 290, easing: "ease-out" };
+
+    const fighterCard = (id, f, isP1, startLeft, clashLeft, restLeft) => {
+      const curLeft = stage === 0 ? startLeft : stage === 1 ? clashLeft : restLeft;
+      return v_flex()
         .id(id)
         .absolute()
-        .left(slide ? targetLeft : startLeft)
+        .left(curLeft)
         .top(cardTop)
         .w(cardW)
         .items_center()
         .gap(6)
-        .transition("left", { duration: 300, easing: "ease-out" })
+        .opacity(stage === 0 ? 0.25 : 1)
+        .transition("left", cardLeftPolicy)
+        .transition("opacity", { duration: 140, easing: "ease-out" })
         // Classic GBA warm-ivory trading-card portrait frame (clean, zero neon clash!)
         .child(
           div()
@@ -653,13 +714,75 @@ export default class EmbeddedBattle {
                 .child(div().text_size(9.5).font_bold().text_color("#fbbf24").child(`×${f.tokenMult.toFixed(2)}`)),
             ),
         );
+    };
 
-    return h_flex()
+    const vsW = 104;
+    const vsH = 82;
+    const vsTargetTop = Math.round((panelH - vsH) / 2) - 9;
+    const vsLeft = panelLeft + Math.round((panelW - vsW) / 2) + this.introShakeX;
+    const vsTop = this.introVsState === 0
+      ? -vsH - 18
+      : this.introVsState === 1
+        ? panelTop + vsTargetTop + 6
+        : panelTop + vsTargetTop + this.introShakeY;
+    const vsTopPolicy = this.introVsState === 1
+      ? { duration: 155, easing: "ease-in" }
+      : { duration: 85, easing: "ease-out" };
+
+    const plaque = div()
+      .id("intro-glass-plaque")
+      .absolute()
+      .left(panelLeft + this.introShakeX)
+      .top(panelTop + this.introShakeY)
+      .w(panelW)
+      .h(panelH)
+      .rounded(14)
+      .overflow_hidden()
+      .bg("#141a24ee")
+      .border_1()
+      .border_color(this.introFlash ? "#fde68a99" : "#ffffff24")
+      .shadow_lg()
+      .transition("left", { duration: 65, easing: "linear" })
+      .transition("top", { duration: 65, easing: "linear" })
+      .child(fighterCard("intro-p1-band", this.p1, true, -cardW, leftClash, leftTarget))
+      .child(fighterCard("intro-cpu-band", this.cpu, false, panelW, rightClash, rightTarget));
+
+    // Animated GBA pixel starburst spark right at the center collision point!
+    if (stage === 2) {
+      plaque.child(
+        div()
+          .id(this.introSparkId)
+          .absolute()
+          .left(sparkLeft)
+          .top(sparkTop)
+          .size(sparkSz)
+          .child(image(fxGifAsset("b-slash")).size(sparkSz)),
+      );
+    }
+
+    // Crisp warm impact flash veil on collision & VS slam
+    if (this.introFlash) {
+      plaque.child(div().absolute().inset_0().bg("#fef08a").opacity(0.20));
+    }
+
+    plaque.child(
+      h_flex().absolute().left(0).bottom(7).w_full().justify_center()
+        .child(
+          div().text_size(9.5).text_color("#64748b").child(
+            tr("点击或按空格跳过", "Click or press Space to skip", "クリック / Space でスキップ", "클릭 또는 Space로 건너뛰기"),
+          ),
+        ),
+    );
+
+    const vsInner = div().w(vsW).h(vsH).child(image(iconAsset("vs-emblem")).w(vsW).h(vsH));
+    if (this.introVsState === 2) {
+      vsInner.loop("opacity", { from: 0.92, to: 1.0, period: 380 });
+    }
+
+    return div()
       .id("battle-intro-inline")
       .relative()
       .size_full()
-      .items_center()
-      .justify_center()
       .bg("#0c1118")
       .overflow_hidden()
       .cursor_pointer()
@@ -675,43 +798,22 @@ export default class EmbeddedBattle {
           .opacity(0.46),
       )
       .child(div().absolute().inset_0().bg("#0c1118").opacity(0.52))
-      // Unified clean charcoal glass plaque (NO muddy blue/red split, NO leaked lines!)
+      // Unified clean charcoal glass plaque with collision shake + spark burst
+      .child(plaque)
+      // Heavy metallic VS emblem slamming down from above onto the center clash!
       .child(
         div()
-          .relative()
-          .w(panelW)
-          .h(panelH)
-          .rounded(14)
-          .overflow_hidden()
-          .bg("#141a24ee")
-          .border_1()
-          .border_color("#ffffff24")
-          .shadow_lg()
-          .child(fighterCard("intro-p1-band", this.p1, true, leftTarget, leftTarget - 72))
-          .child(fighterCard("intro-cpu-band", this.cpu, false, rightTarget, rightTarget + 72))
-          .child(
-            h_flex()
-              .absolute()
-              .inset_0()
-              .pb(18)
-              .items_center()
-              .justify_center()
-              .child(
-                div()
-                  .w(104)
-                  .h(82)
-                  .loop("opacity", { from: 0.90, to: 1.0, period: 360 })
-                  .child(image(iconAsset("vs-emblem")).w(104).h(82)),
-              ),
-          )
-          .child(
-            h_flex().absolute().left(0).bottom(7).w_full().justify_center()
-              .child(
-                div().text_size(9.5).text_color("#64748b").child(
-                  tr("点击或按空格跳过", "Click or press Space to skip", "クリック / Space でスキップ", "클릭 또는 Space로 건너뛰기"),
-                ),
-              ),
-          ),
+          .id("intro-vs-slam")
+          .absolute()
+          .left(vsLeft)
+          .top(vsTop)
+          .w(vsW)
+          .h(vsH)
+          .opacity(this.introVsState === 0 ? 0 : 1)
+          .transition("top", vsTopPolicy)
+          .transition("left", { duration: 65, easing: "linear" })
+          .transition("opacity", { duration: 90, easing: "ease-out" })
+          .child(vsInner),
       );
   }
 
