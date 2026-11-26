@@ -86,7 +86,7 @@
 
 ---
 
-### 5. 鳴き声・モンスターボール空間・バイリンガル UI
+### 5. 鳴き声・モンスターボール空間・4 言語 UI
 
 <div align="center">
   <img src="mods/herdr-pokemon/assets/balls/poke.svg" width="30" />
@@ -103,7 +103,7 @@
 
 - **2 種類のマイルド鳴き声エンジン**：`Let's Go` / `Showdown` の鳴き声を `ffmpeg` で耳障りのない柔らかい音質に調整し、エージェント待機・完了を通知。
 - **10 種類のドット絵モンスターボール**：サイドバーの各スペースを右クリックで好きなボールに変更可能。
-- **UI 言語切替＆フルテーマ対応**：設定から中国語 / 英語をワンクリック切替。ライト＆ナイトテーマ、GBA ドットフォント / クリーン表示切替（`Alt+Shift+G`）に対応。
+- **4 言語 UI ＆フルテーマ対応**：生態園設定から日本語 / 中国語 / 英語 / 韓国語をワンクリック切替。ライト＆ナイトテーマ、GBA ドット / クリーン UI 切替に対応。
 
 ---
 
@@ -134,6 +134,7 @@ chmod +x install.sh
 
 herdr-app check ~/.config/herdr-app/mods/herdr-pokemon
 herdr-app do layout.switch '{"name":"herdr-pokemon"}'
+herdr-app do app.theme '{"name":"herdr-pokemon-night"}' # ライト版は "herdr-pokemon"
 ```
 
 ### 主な操作
@@ -144,8 +145,7 @@ herdr-app do layout.switch '{"name":"herdr-pokemon"}'
 | **ポケモンを長押しドラッグ → 別のポケモンへ** | GBA ポケモンバトルを開始 |
 | **バトル中 `↑↓←→` / `WASD` / `1–4` / `Enter` / `ESC`** | キーボードで技選択・攻撃・終了 |
 | **生態園 `×` ／ 右下マスターボール** | 生態園を収納・再展開 |
-| **`Alt + Shift + P`** | フォーカス中のエージェントの図鑑を開く |
-| **`Alt + Shift + G`** | クリーン UI / クラシック GBA ドット UI 切替 |
+| **生態園左上の歯車設定** | 4 言語切替・UI スタイル・マップ・天気・時間帯を変更 |
 | **サイドバーのスペースを右クリック** | 10 種類のモンスターボールを選択 |
 
 ---

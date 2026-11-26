@@ -103,7 +103,7 @@
 
 - **듀얼 소프트 울음소리 엔진**: `Let's Go` / `Showdown` 울음소리를 `ffmpeg`로 부드럽게 필터링하여 에이전트 대기/완료 알림에 활용합니다.
 - **10종 픽셀 몬스터볼 스페이스**: 사이드바 스페이스를 우클릭하여 전용 몬스터볼을 지정할 수 있습니다.
-- **전역 언어 전환 & 풀 테마 지원**: 설정에서 중국어 / 영어 전환, 라이트·나이트 테마, GBA 픽셀 / 소프트 UI 전환(`Alt+Shift+G`) 지원.
+- **4개 언어 전환 & 풀 테마 지원**: 생태원 설정에서 한국어 / 영어 / 중국어 / 일본어 전환, 라이트·나이트 테마, GBA 픽셀 / 소프트 UI 전환 지원.
 
 ---
 
@@ -134,6 +134,7 @@ chmod +x install.sh
 
 herdr-app check ~/.config/herdr-app/mods/herdr-pokemon
 herdr-app do layout.switch '{"name":"herdr-pokemon"}'
+herdr-app do app.theme '{"name":"herdr-pokemon-night"}' # 라이트 테마는 "herdr-pokemon"
 ```
 
 ### 주요 단축키 및 조작
@@ -144,8 +145,7 @@ herdr-app do layout.switch '{"name":"herdr-pokemon"}'
 | **포켓몬 길게 드래그 → 다른 포켓몬에 드롭** | GBA 포켓몬 배틀 시작 |
 | **배틀 중 `↑↓←→` / `WASD` / `1–4` / `Enter` / `ESC`** | 키보드 기술 선택 · 공격 · 종료 |
 | **생태원 `×` / 우측 하단 마스터볼** | 생태원 숨기기 / 다시 열기 |
-| **`Alt + Shift + P`** | 현재 포커스된 에이전트 도감 열기 |
-| **`Alt + Shift + G`** | 소프트 UI / 클래식 GBA 픽셀 UI 전환 |
+| **생태원 좌상단 톱니바퀴 설정** | 4개 언어 · UI 스타일 · 맵 · 날씨 · 시간대 전환 |
 | **사이드바 스페이스 우클릭** | 10종 픽셀 몬스터볼 선택 |
 
 ---

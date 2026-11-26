@@ -86,7 +86,7 @@
 
 ---
 
-### 5. Audio, Poké Ball Spaces & Bilingual UI
+### 5. Audio, Poké Ball Spaces & 4-Language UI
 
 <div align="center">
   <img src="mods/herdr-pokemon/assets/balls/poke.svg" width="30" />
@@ -103,8 +103,8 @@
 
 - **Dual Softened Cry Engines**: Switch between `Let's Go` and `Showdown` cries, gently audio-filtered via `ffmpeg` for non-intrusive `blocked` / `done` cues.
 - **10 Pixel-Art Poké Ball Spaces**: Right-click any sidebar space to assign its signature Poké Ball.
-- **Pure Bilingual UI (`English` / `简体中文`)**: Global language toggle in settings with official Chinese names for all 260 Pokédex entries & battle moves.
-- **Full Theme Suite**: Daylight & Mt. Moon Night themes, GBA pixel-font / clean soft mode toggle (`Alt+Shift+G`), custom file icons, dialogs, menus, and toasts.
+- **4-Language In-App UI (`English` / `简体中文` / `日本語` / `한국어`)**: Switch interface language anytime from Habitat Settings, with localized Pokédex & battle move names.
+- **Full Theme Suite**: Daylight & Mt. Moon Night themes, GBA pixel-font / clean soft mode toggle in Habitat Settings, custom file icons, dialogs, menus, and toasts.
 
 ---
 
@@ -135,6 +135,7 @@ chmod +x install.sh
 
 herdr-app check ~/.config/herdr-app/mods/herdr-pokemon
 herdr-app do layout.switch '{"name":"herdr-pokemon"}'
+herdr-app do app.theme '{"name":"herdr-pokemon-night"}' # or "herdr-pokemon" for light mode
 ```
 
 ### Controls
@@ -145,8 +146,7 @@ herdr-app do layout.switch '{"name":"herdr-pokemon"}'
 | **Hold & Drag Pokémon → Drop on Another** | Launch inline GBA Pokémon Battle |
 | **Battle: `↑↓←→` / `WASD` / `1–4` / `Enter` / `ESC`** | Full keyboard move selection, attack, and exit |
 | **Habitat `×` / Bottom-Right Master Ball** | Recall & hide Habitat / Release & reopen Habitat |
-| **`Alt + Shift + P`** | Quick-open Pokédex Picker for focused agent |
-| **`Alt + Shift + G`** | Toggle Clean Soft UI / Classic GBA Pixel UI |
+| **Habitat Settings (Gear Icon)** | Switch Language (`EN`/`中文`/`日本語`/`한국어`), UI Style, Biome, Weather & Day/Night |
 | **Right-click Sidebar Space** | Choose from 10 pixel-art Poké Balls |
 
 ---

@@ -36,9 +36,7 @@ if os.path.exists(path):
 data["layout:herdr-pokemon"] = {
     "cmd-w": "herdr-pokemon.close_tab",
     "f2": "herdr-pokemon.rename_tab",
-    "shift-f2": "herdr-pokemon.rename_space",
-    "alt-shift-p": "herdr-pokemon.pick",
-    "alt-shift-g": "herdr-pokemon.style"
+    "shift-f2": "herdr-pokemon.rename_space"
 }
 with open(path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
