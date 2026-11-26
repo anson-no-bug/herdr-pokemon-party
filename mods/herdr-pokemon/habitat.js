@@ -35,24 +35,24 @@ const SLEEP_AFTER = 3 * 60 * 1000;
 const CRY_GAP = 1500;
 
 export const BIOMES = [
-  { id: "meadow", name: "Pallet River",       cn: "真新镇曲流原野", defaultWeather: "sunny" },
-  { id: "lake",   name: "Cerulean Bay",       cn: "华蓝群岛海湾",   defaultWeather: "breeze" },
-  { id: "autumn", name: "Ecruteak Shrine",    cn: "缘朱双池神社",   defaultWeather: "petals" },
-  { id: "moon",   name: "Mt. Moon Caldera",   cn: "月见山环形湖",   defaultWeather: "fireflies" },
-  { id: "ocean",  name: "Cinnabar Atoll",     cn: "红莲珊瑚深海",   defaultWeather: "sunny" },
-  { id: "desert", name: "Sandstone Oasis",    cn: "沙砾荒漠绿洲",   defaultWeather: "breeze" },
-  { id: "cliff",  name: "Chimney Waterfall",  cn: "烟囱山瀑布峡谷", defaultWeather: "rainbow" },
+  { id: "meadow", name: "Pallet River",       cn: "真新镇曲流原野", ja: "マサラ川原",       ko: "태초마을 강변",   defaultWeather: "sunny" },
+  { id: "lake",   name: "Cerulean Bay",       cn: "华蓝群岛海湾",   ja: "ハナダ湾",         ko: "블루시티 해만",   defaultWeather: "breeze" },
+  { id: "autumn", name: "Ecruteak Shrine",    cn: "缘朱双池神社",   ja: "エンジュ神社",     ko: "인주시티 신사",   defaultWeather: "petals" },
+  { id: "moon",   name: "Mt. Moon Caldera",   cn: "月见山环形湖",   ja: "おつきみやま湖",   ko: "달맞이산 호수",   defaultWeather: "fireflies" },
+  { id: "ocean",  name: "Cinnabar Atoll",     cn: "红莲珊瑚深海",   ja: "グレン環礁",       ko: "홍련 환초",       defaultWeather: "sunny" },
+  { id: "desert", name: "Sandstone Oasis",    cn: "沙砾荒漠绿洲",   ja: "砂漠のオアシス",   ko: "사막 오아시스",   defaultWeather: "breeze" },
+  { id: "cliff",  name: "Chimney Waterfall",  cn: "烟囱山瀑布峡谷", ja: "えんとつ山渓谷",   ko: "굴뚝산 폭포",     defaultWeather: "rainbow" },
 ];
 
 export const WEATHERS = [
-  { id: "sunny",     label: "Sunny",     cn: "晴朗" },
-  { id: "breeze",    label: "Breeze",    cn: "微风落叶" },
-  { id: "petals",    label: "Blossom",   cn: "花瓣飘落" },
-  { id: "drizzle",   label: "Drizzle",   cn: "细雨" },
-  { id: "rainbow",   label: "Sunshower", cn: "雨后彩虹" },
-  { id: "fireflies", label: "Fireflies", cn: "萤火虫" },
-  { id: "storm",     label: "Shower",    cn: "阵雨" },
-  { id: "snow",      label: "Snow",      cn: "飘雪" },
+  { id: "sunny",     label: "Sunny",     cn: "晴朗",     ja: "晴れ",       ko: "맑음" },
+  { id: "breeze",    label: "Breeze",    cn: "微风落叶", ja: "そよ風",     ko: "산들바람" },
+  { id: "petals",    label: "Blossom",   cn: "花瓣飘落", ja: "花びら",     ko: "꽃잎" },
+  { id: "drizzle",   label: "Drizzle",   cn: "细雨",     ja: "小雨",       ko: "가랑비" },
+  { id: "rainbow",   label: "Sunshower", cn: "雨后彩虹", ja: "天気雨",     ko: "여우비 무지개" },
+  { id: "fireflies", label: "Fireflies", cn: "萤火虫",   ja: "ホタル",     ko: "반딧불이" },
+  { id: "storm",     label: "Shower",    cn: "阵雨",     ja: "にわか雨",   ko: "소나기" },
+  { id: "snow",      label: "Snow",      cn: "飘雪",     ja: "雪",         ko: "눈" },
 ];
 
 // Natural weather cycle order (drizzle/storm naturally lead into rainbow!)

@@ -270,62 +270,64 @@ export default class Dialog {
             .child(
               h_flex().gap(8).items_center()
                 .child(image(iconAsset("pokedex")).size(20))
-                .child(div().text_size(15).font_bold().text_color(p.fg).child(tr("主题与生态设置", "Theme & Habitat Settings"))),
+                .child(div().text_size(15).font_bold().text_color(p.fg).child(tr("主题与生态设置", "Theme & Habitat Settings", "テーマ・生態園設定", "테마 및 생태원 설정"))),
             )
             .child(applyBadgeFont(div().text_size(9.5).text_color(p.dim).child("ESC"))),
         )
         .child(
           section(
-            tr("语言", "LANGUAGE"),
+            tr("语言", "LANGUAGE", "言語", "언어"),
             h_flex().gap(6).flex_wrap()
               .child(chip("lg-zh", "中文", lang() === "zh", () => setLang("zh")))
-              .child(chip("lg-en", "English", lang() === "en", () => setLang("en"))),
+              .child(chip("lg-en", "English", lang() === "en", () => setLang("en")))
+              .child(chip("lg-ja", "日本語", lang() === "ja", () => setLang("ja")))
+              .child(chip("lg-ko", "한국어", lang() === "ko", () => setLang("ko"))),
           ),
         )
         .child(
           section(
-            tr("界面风格", "UI STYLE"),
+            tr("界面风格", "UI STYLE", "UI スタイル", "UI 스타일"),
             h_flex().gap(6).flex_wrap()
-              .child(chip("st-bal", tr("简约克制（推荐）", "Clean Restrained (Recommended)"), curStyle === "balanced", () => setShared(STYLE_KEY, "balanced")))
-              .child(chip("st-retro", tr("复古像素风", "GBA Retro Pixel"), curStyle === "retro", () => setShared(STYLE_KEY, "retro"))),
+              .child(chip("st-bal", tr("简约克制（推荐）", "Clean Restrained (Recommended)", "クリーン（推奨）", "깔끔한 모드 (추천)"), curStyle === "balanced", () => setShared(STYLE_KEY, "balanced")))
+              .child(chip("st-retro", tr("复古像素风", "GBA Retro Pixel", "GBA レトロドット", "GBA 레트로 픽셀"), curStyle === "retro", () => setShared(STYLE_KEY, "retro"))),
           ),
         )
         .child(
           section(
-            tr("主题配色", "COLOR THEME"),
+            tr("主题配色", "COLOR THEME", "カラーテーマ", "컬러 테마"),
             h_flex().gap(6).flex_wrap()
-              .child(chip("th-day", tr("浅色白天", "Clean Light"), !dark, () => run("app.theme", { name: "herdr-pokemon" })))
-              .child(chip("th-night", tr("深色夜晚", "Dark Slate"), dark, () => run("app.theme", { name: "herdr-pokemon-night" }))),
+              .child(chip("th-day", tr("浅色白天", "Clean Light", "ライト", "라이트"), !dark, () => run("app.theme", { name: "herdr-pokemon" })))
+              .child(chip("th-night", tr("深色夜晚", "Dark Slate", "ダーク", "다크"), dark, () => run("app.theme", { name: "herdr-pokemon-night" }))),
           ),
         )
         .child(
           section(
-            tr("生态地图", "HABITAT BIOME"),
+            tr("生态地图", "HABITAT BIOME", "生態園マップ", "생태원 맵"),
             h_flex().gap(6).flex_wrap()
-              .children(BIOMES.map((b) => chip(`bm-${b.id}`, isZh() ? b.cn : b.name, curBiome === b.id, () => setShared(BIOME_KEY, b.id)))),
+              .children(BIOMES.map((b) => chip(`bm-${b.id}`, tr(b.cn, b.name, b.ja, b.ko), curBiome === b.id, () => setShared(BIOME_KEY, b.id)))),
           ),
         )
         .child(
           section(
-            tr("昼夜光线", "TIME OF DAY"),
+            tr("昼夜光线", "TIME OF DAY", "時間帯", "시간대"),
             h_flex().gap(6).flex_wrap()
               .children([
-                ["auto", tr("自动", "Auto")],
-                ["day", tr("白天", "Day")],
-                ["dusk", tr("黄昏", "Dusk")],
-                ["night", tr("夜晚", "Night")],
+                ["auto", tr("自动", "Auto", "自動", "자동")],
+                ["day", tr("白天", "Day", "昼", "낮")],
+                ["dusk", tr("黄昏", "Dusk", "夕方", "노을")],
+                ["night", tr("夜晚", "Night", "夜", "밤")],
               ].map(([tm, lbl]) => chip(`tm-${tm}`, lbl, curTime === tm, () => setShared(TIME_KEY, tm)))),
           ),
         )
         .child(
           section(
-            tr("天气", "WEATHER"),
+            tr("天气", "WEATHER", "天候", "날씨"),
             h_flex().gap(6).flex_wrap()
-              .children(WEATHERS.map((w) => chip(`wt-${w.id}`, isZh() ? w.cn : w.label, curWeather === w.id, () => setShared(WEATHER_KEY, w.id)))),
+              .children(WEATHERS.map((w) => chip(`wt-${w.id}`, tr(w.cn, w.label, w.ja, w.ko), curWeather === w.id, () => setShared(WEATHER_KEY, w.id)))),
           ),
         )
         .child(div().flex_1())
-        .child(h_flex().justify_end().child(rpgButton("st-done", tr("完成", "Done"), () => this.close(), { variant: "teal", cursor: true }))),
+        .child(h_flex().justify_end().child(rpgButton("st-done", tr("完成", "Done", "完了", "완료"), () => this.close(), { variant: "teal", cursor: true }))),
     );
   }
 
@@ -357,17 +359,17 @@ export default class Dialog {
         .child(label);
 
     const mapOpts = [
-      { v: 0, label: tr("关闭", "Off") },
-      { v: 10, label: tr("10分", "10m") },
-      { v: 30, label: tr("30分", "30m") },
-      { v: 60, label: tr("1小时", "1h") },
-      { v: 120, label: tr("2小时", "2h") },
+      { v: 0, label: tr("关闭", "Off", "オフ", "끄기") },
+      { v: 10, label: tr("10分", "10m", "10分", "10분") },
+      { v: 30, label: tr("30分", "30m", "30分", "30분") },
+      { v: 60, label: tr("1小时", "1h", "1時間", "1시간") },
+      { v: 120, label: tr("2小时", "2h", "2時間", "2시간") },
     ];
     const wOpts = [
-      { v: 0, label: tr("关闭", "Off") },
-      { v: 3, label: tr("3分", "3m") },
-      { v: 10, label: tr("10分", "10m") },
-      { v: 30, label: tr("30分", "30m") },
+      { v: 0, label: tr("关闭", "Off", "オフ", "끄기") },
+      { v: 3, label: tr("3分", "3m", "3分", "3분") },
+      { v: 10, label: tr("10分", "10m", "10分", "10분") },
+      { v: 30, label: tr("30分", "30m", "30分", "30분") },
     ];
 
     return rpgFrame(
@@ -378,20 +380,22 @@ export default class Dialog {
         .w_full()
         .p(12)
         .gap(10)
-        // Language toggle (pure Chinese vs pure English!)
+        // 4-Language global selector (ZH / EN / JA / KO)
         .child(
           v_flex().gap(5)
-            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("显示语言", "Language")))
+            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("显示语言", "Language", "表示言語", "표시 언어")))
             .child(
               h_flex().gap(4)
                 .child(seg("hp-lang-zh", "中文", curLang === "zh", () => setLang("zh")))
-                .child(seg("hp-lang-en", "English", curLang === "en", () => setLang("en"))),
+                .child(seg("hp-lang-en", "EN", curLang === "en", () => setLang("en")))
+                .child(seg("hp-lang-ja", "日本語", curLang === "ja", () => setLang("ja")))
+                .child(seg("hp-lang-ko", "한국어", curLang === "ko", () => setLang("ko"))),
             ),
         )
         // Quick 7-biome icon row
         .child(
           v_flex().gap(5)
-            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("生态地图", "Map")))
+            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("生态地图", "Map", "マップ", "맵")))
             .child(
               h_flex().gap(4).items_center().children(
                 BIOMES.map((b) => {
@@ -408,7 +412,7 @@ export default class Dialog {
                     .bg(on ? p.selected : p.surface)
                     .cursor_pointer()
                     .hover((s) => s.bg(p.hover))
-                    .tooltip(isZh() ? b.cn : b.name)
+                    .tooltip(tr(b.cn, b.name, b.ja, b.ko))
                     .on_click(() => setShared(BIOME_KEY, b.id))
                     .child(image(iconAsset(`env-${b.id}`)).size(15));
                 }),
@@ -418,7 +422,7 @@ export default class Dialog {
         // Map auto-rotation interval
         .child(
           v_flex().gap(5)
-            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("地图轮换间隔", "Map Rotation")))
+            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("地图轮换间隔", "Map Rotation", "マップ自動切替", "맵 자동 전환")))
             .child(
               h_flex().gap(4).children(
                 mapOpts.map((o) => seg(`hp-mi-${o.v}`, o.label, curMapMin === o.v, () => setShared(BIOME_INTERVAL_KEY, o.v))),
@@ -428,7 +432,7 @@ export default class Dialog {
         // Weather auto-rotation interval
         .child(
           v_flex().gap(5)
-            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("天气轮换间隔", "Weather Cycle")))
+            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("天气轮换间隔", "Weather Cycle", "天候自動切替", "날씨 자동 전환")))
             .child(
               h_flex().gap(4).children(
                 wOpts.map((o) => seg(`hp-wi-${o.v}`, o.label, curWMin === o.v, () => setShared(WEATHER_INTERVAL_KEY, o.v))),

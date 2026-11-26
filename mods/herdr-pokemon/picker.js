@@ -10,7 +10,7 @@ import { h_flex, v_flex, InputState, Input } from "gpui-base";
 import { props, closeOverlay, shared, setShared, playSound, notify, checking } from "herdr";
 import {
   palette, isRetro, isZh, tr, alpha, rpgFrame, pokeBall, iconAsset,
-  BALL_TYPES,
+  BALL_TYPES, ballLabel,
 } from "./kit.js";
 import {
   GEN_TABS, genOf, nameOf, matchPokedex, savePicks, resetSlotXp, resetSlotMoves, movesForSlot, setBallForSpace,
@@ -32,7 +32,7 @@ export default class Picker {
     this.loadedKey = "";
     this.handle = cx.focus_handle();
     if (this.mode === "pokemon") {
-      this.input = InputState.new({ placeholder: tr("搜索宝可梦名称或编号…", "Search Pokémon by name or #number…") });
+      this.input = InputState.new({ placeholder: tr("搜索宝可梦名称或编号…", "Search Pokémon by name or #number…", "ポケモン名または図鑑番号で検索…", "포켓몬 이름 또는 번호로 검색…") });
       this.input.on("change", (_e, cx) => {
         this.filter = this.input.value();
         this.page = 0;
@@ -87,8 +87,8 @@ export default class Picker {
       const shinyHit = rollShinyForSlot(this.p.slot);
       if (shinyHit) {
         notify({
-          title: tr("✨ 遇见了稀有闪光宝可梦！", "✨ Rare Shiny Pokémon Encountered!"),
-          body: tr(`恭喜！这只 ${nameOf(id)} 是极稀有的闪光个体！`, `Lucky! This ${nameOf(id)} is a rare Shiny!`),
+          title: tr("✨ 遇见了稀有闪光宝可梦！", "✨ Rare Shiny Pokémon Encountered!", "✨ 希少な色違いポケモンに遭遇！", "✨ 희귀 이로치 포켓몬 발견!"),
+          body: tr(`恭喜！这只 ${nameOf(id)} 是极稀有的闪光个体！`, `Lucky! This ${nameOf(id)} is a rare Shiny!`, `おめでとう！この ${nameOf(id)} は希少な色違いです！`, `축하합니다! 이 ${nameOf(id)}는 희귀 이로치 개체입니다!`),
           level: "info",
           timeout: 5000,
         });
@@ -194,7 +194,7 @@ export default class Picker {
                       .child(pokeBall(b.id, 28, { open: false }))
                       .child(pokeBall(b.id, 28, { open: true })),
                   )
-                  .child(div().text_size(11.5).font_semibold().text_color(p.fg).child(isZh() ? b.cn : b.name));
+                  .child(div().text_size(11.5).font_semibold().text_color(p.fg).child(ballLabel(b)));
               }),
             ),
           ),
@@ -317,12 +317,14 @@ export default class Picker {
                 )
                 .child(
                   v_flex().gap(1).min_w(0)
-                    .child(div().text_size(13.8).font_semibold().text_color(p.fg).child(tr("选择搭档", "Choose Partner")))
+                    .child(div().text_size(13.8).font_semibold().text_color(p.fg).child(tr("选择搭档", "Choose Partner", "パートナーを選択", "파트너 선택")))
                     .child(
                       div().text_size(11).text_color(p.muted).truncate().child(
                         tr(
                           `${this.p.tag ?? "智能体"} · #${String(curId).padStart(3, "0")} ${nameOf(curId)}${shinyOn ? " ✦" : ""} · 体型 ${szTag} (${Math.round(szScale * 100)}%)`,
                           `${this.p.tag ?? "Agent"} · #${String(curId).padStart(3, "0")} ${nameOf(curId)}${shinyOn ? " ✦" : ""} · Size ${szTag} (${Math.round(szScale * 100)}%)`,
+                          `${this.p.tag ?? "エージェント"} · #${String(curId).padStart(3, "0")} ${nameOf(curId)}${shinyOn ? " ✦" : ""} · サイズ ${szTag} (${Math.round(szScale * 100)}%)`,
+                          `${this.p.tag ?? "에이전트"} · #${String(curId).padStart(3, "0")} ${nameOf(curId)}${shinyOn ? " ✦" : ""} · 크기 ${szTag} (${Math.round(szScale * 100)}%)`,
                         ),
                       ),
                     ),
@@ -344,8 +346,8 @@ export default class Picker {
                       .text_size(11)
                       .font_semibold()
                       .text_color("#d97706")
-                      .tooltip(tr("稀有随机闪光个体（1/64 概率）", "Rare natural Shiny individual (1/64 odds)"))
-                      .child(tr("✦ 闪光", "✦ Shiny")),
+                      .tooltip(tr("稀有随机闪光个体（1/64 概率）", "Rare natural Shiny individual (1/64 odds)", "希少なランダム色違い個体（1/64）", "희귀 랜덤 이로치 개체 (1/64 확률)"))
+                      .child(tr("✦ 闪光", "✦ Shiny", "✦ 色違い", "✦ 이로치")),
                   ),
                 )
                 .when(Boolean(slot), (el) =>
@@ -354,10 +356,10 @@ export default class Picker {
                       "pk-evolock-toggle",
                       evoLocked,
                       p.blue,
-                      tr("锁定进化", "Lock Evo"),
+                      tr("锁定进化", "Lock Evo", "進化ロック", "진화 잠금"),
                       evoLocked
-                        ? tr("锁定进化：已开启（保持当前形态，等级照常提升）· 点击解除", "Evolution Lock: ON (keeps form, levels still grow) · Click to unlock")
-                        : tr("锁定进化：已关闭（积累经验自动进化）· 点击锁定当前形态", "Evolution Lock: OFF (auto-evolves with XP) · Click to lock"),
+                        ? tr("锁定进化：已开启（保持当前形态，等级照常提升）· 点击解除", "Evolution Lock: ON (keeps form, levels still grow) · Click to unlock", "進化ロック：オン（現在の姿を維持）· クリックで解除", "진화 잠금: 켜짐 (현재 모습 유지) · 클릭하여 해제")
+                        : tr("锁定进化：已关闭（积累经验自动进化）· 点击锁定当前形态", "Evolution Lock: OFF (auto-evolves with XP) · Click to lock", "進化ロック：オフ（経験値で自動進化）· クリックでロック", "진화 잠금: 꺼짐 (경험치로 자동 진화) · 클릭하여 잠금"),
                       (_e, cx) => { setEvoLocked(slot, !evoLocked); cx.notify(); },
                     ),
                   ),
@@ -412,7 +414,7 @@ export default class Picker {
                           .when(active, (el) => el.font_semibold().text_color(p.fg))
                           .when(!active, (el) => el.font_medium().text_color(p.muted).hover((s) => s.text_color(p.fg)))
                           .cursor_pointer()
-                          .tooltip(isZh() ? g.cn : g.label)
+                          .tooltip(tr(g.cn, g.label, g.ja, g.ko))
                           .on_click((_e, cx) => {
                             this.genTab = g.id;
                             this.page = 0;
@@ -423,13 +425,15 @@ export default class Picker {
                             this.loadVisibleIcons(cx);
                             cx.notify();
                           })
-                          .child(isZh() ? g.cn : g.label);
+                          .child(tr(g.cn, g.label, g.ja, g.ko));
                       }),
                     ),
                 )
                 .child(
                   div().flex_none().text_size(11).text_color(p.dim).child(
-                    searching ? tr(`找到 ${shown.length} 只`, `${shown.length} found`) : tr(`共 ${shown.length} 只`, `${shown.length}`),
+                    searching
+                      ? tr(`找到 ${shown.length} 只`, `${shown.length} found`, `${shown.length} 匹`, `${shown.length}마리`)
+                      : tr(`共 ${shown.length} 只`, `${shown.length}`, `全 ${shown.length} 匹`, `총 ${shown.length}마리`),
                   ),
                 ),
             ),

@@ -52,8 +52,8 @@ export default class Status {
         .child(
           h_flex().gap(5).items_center()
             .child(div().size(7).rounded_full().bg(needs > 0 ? p.blocked : p.teal))
-            .child(tr(`队伍 ${list.length}`, `Party ${list.length}`))
-            .when(needs > 0, (el) => el.child(div().font_semibold().text_color(p.blocked).child(tr(`· ${needs} 等待处理`, `· ${needs} waiting!`)))),
+            .child(tr(`队伍 ${list.length}`, `Party ${list.length}`, `パーティ ${list.length}`, `파티 ${list.length}`))
+            .when(needs > 0, (el) => el.child(div().font_semibold().text_color(p.blocked).child(tr(`· ${needs} 等待处理`, `· ${needs} waiting!`, `· ${needs} 待機中`, `· ${needs} 대기 중`)))),
         )
         .child(div().flex_1())
         .child(
@@ -100,8 +100,8 @@ export default class Status {
             .hover((s) => s.bg("#7c3aed3d").border_color("#c084fc").opacity(1))
             .tooltip(
               habHidden
-                ? tr("点击大师球放出宝可梦生态园", "Click Master Ball to release Pokémon Habitat")
-                : tr("点击收入大师球并隐藏生态园", "Click to recall Habitat into Master Ball"),
+                ? tr("点击大师球放出宝可梦生态园", "Click Master Ball to release Pokémon Habitat", "マスターボールを押して生態園を展開", "마스터볼을 눌러 생태원 열기")
+                : tr("点击收入大师球并隐藏生态园", "Click to recall Habitat into Master Ball", "マスターボールに生態園を収納", "마스터볼에 생태원 수납"),
             )
             .on_click(() => {
               if (habHidden) {

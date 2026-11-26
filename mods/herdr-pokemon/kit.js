@@ -22,24 +22,35 @@ export const WIN_W_KEY = "herdr-pokemon.win-w";
 export const HABITAT_RELEASE_KEY = "herdr-pokemon.hab-release";
 export const HABITAT_RECALL_KEY = "herdr-pokemon.hab-recall";
 
-// Global language preference ("zh" | "en", default "zh") — switches the entire Pokemon ecosystem cleanly!
-export const lang = () => (shared(LANG_KEY) === "en" ? "en" : "zh");
+// Global language preference ("zh" | "en" | "ja" | "ko", default "zh") — switches the entire Pokemon ecosystem cleanly!
+export const SUPPORTED_LANGS = ["zh", "en", "ja", "ko"];
+export const lang = () => {
+  const v = shared(LANG_KEY);
+  return SUPPORTED_LANGS.includes(v) ? v : "zh";
+};
 export const isZh = () => lang() === "zh";
-export const setLang = (next) => setShared(LANG_KEY, next === "en" ? "en" : "zh");
-export const tr = (zh, en) => (isZh() ? zh : en);
+export const setLang = (next) => setShared(LANG_KEY, SUPPORTED_LANGS.includes(next) ? next : "zh");
+export const tr = (zh, en, ja, ko) => {
+  const l = lang();
+  if (l === "zh") return zh;
+  if (l === "ja") return ja ?? en;
+  if (l === "ko") return ko ?? en;
+  return en;
+};
 
 export const BALL_TYPES = [
-  { id: "poke",    name: "Poké Ball",    cn: "精灵球", accent: "#e04646" },
-  { id: "great",   name: "Great Ball",   cn: "超级球", accent: "#3a7bd5" },
-  { id: "ultra",   name: "Ultra Ball",   cn: "高级球", accent: "#d4a017" },
-  { id: "master",  name: "Master Ball",  cn: "大师球", accent: "#7d4bc6" },
-  { id: "premier", name: "Premier Ball", cn: "纪念球", accent: "#d94545" },
-  { id: "heal",    name: "Heal Ball",    cn: "治愈球", accent: "#e06c9f" },
-  { id: "dive",    name: "Dive Ball",    cn: "潜水球", accent: "#3aa6d6" },
-  { id: "dusk",    name: "Dusk Ball",    cn: "黑暗球", accent: "#2f8a53" },
-  { id: "luxury",  name: "Luxury Ball",  cn: "豪华球", accent: "#c99a1e" },
-  { id: "nest",    name: "Nest Ball",    cn: "巢穴球", accent: "#5da652" },
+  { id: "poke",    name: "Poké Ball",    cn: "精灵球", ja: "モンスターボール", ko: "몬스터볼", accent: "#e04646" },
+  { id: "great",   name: "Great Ball",   cn: "超级球", ja: "スーパーボール",   ko: "수퍼볼",   accent: "#3a7bd5" },
+  { id: "ultra",   name: "Ultra Ball",   cn: "高级球", ja: "ハイパーボール",   ko: "하이퍼볼", accent: "#d4a017" },
+  { id: "master",  name: "Master Ball",  cn: "大师球", ja: "マスターボール",   ko: "마스터볼", accent: "#7d4bc6" },
+  { id: "premier", name: "Premier Ball", cn: "纪念球", ja: "プレミアボール",   ko: "프리미어볼", accent: "#d94545" },
+  { id: "heal",    name: "Heal Ball",    cn: "治愈球", ja: "ヒールボール",     ko: "힐볼",     accent: "#e06c9f" },
+  { id: "dive",    name: "Dive Ball",    cn: "潜水球", ja: "ダイブボール",     ko: "다이브볼", accent: "#3aa6d6" },
+  { id: "dusk",    name: "Dusk Ball",    cn: "黑暗球", ja: "ダークボール",     ko: "다크볼",   accent: "#2f8a53" },
+  { id: "luxury",  name: "Luxury Ball",  cn: "豪华球", ja: "ゴージャスボール", ko: "럭셔리볼", accent: "#c99a1e" },
+  { id: "nest",    name: "Nest Ball",    cn: "巢穴球", ja: "ネストボール",     ko: "네스트볼", accent: "#5da652" },
 ];
+export const ballLabel = (b) => tr(b.cn, b.name, b.ja, b.ko);
 
 export const ballAsset = (id, open = false) =>
   `${ASSETS}/balls/${BALL_TYPES.some((b) => b.id === id) ? id : "poke"}${open ? "-open" : ""}.svg`;
@@ -273,8 +284,8 @@ export function openHabitatPrefs() {
     mod: MOD,
     kind: "popup",
     frame: "none",
-    width: 288,
-    height: 256,
+    width: 320,
+    height: 262,
     props: { role: "dialog", kind: "habitat-prefs" },
   });
 }

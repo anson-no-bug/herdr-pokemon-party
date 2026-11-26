@@ -5,7 +5,7 @@
 
 import { exec, appHome, shared, setShared } from "herdr";
 import * as fs from "fs/promises";
-import { BALL_TYPES, SPACE_BALLS_KEY, isZh } from "./kit.js";
+import { BALL_TYPES, SPACE_BALLS_KEY, lang, isZh, tr } from "./kit.js";
 
 // Gen 1 (#1-#151) dense list
 export const NAMES = [
@@ -149,23 +149,65 @@ const EXTRA_POKEMON = [
   [980, "Clodsire", "gen79"],
 ];
 
+// Official Japanese & Korean names for iconic Pokédex entries (Gen 1 starters/favorites + Gen 2–9 icons)
+const NAMES_JA = {
+  1:"フシギダネ",2:"フシギソウ",3:"フシギバナ",4:"ヒトカゲ",5:"リザード",6:"リザードン",
+  7:"ゼニガメ",8:"カメール",9:"カメックス",10:"キャタピー",12:"バタフリー",16:"ポッポ",18:"ピジョット",
+  25:"ピカチュウ",26:"ライチュウ",27:"サンド",35:"ピッピ",36:"ピクシー",37:"ロコン",38:"キュウコン",
+  39:"プリン",40:"プクリン",52:"ニャース",54:"コダック",58:"ガーディ",59:"ウインディ",63:"ケーシィ",
+  65:"フーディン",68:"カイリキー",79:"ヤドン",81:"コイル",92:"ゴース",93:"ゴースト",94:"ゲンガー",
+  104:"カラカラ",113:"ラッキー",116:"タッツー",118:"トサキント",121:"スターミー",123:"ストライク",
+  125:"エレブー",126:"ブーバー",129:"コイキング",130:"ギャラドス",131:"ラプラス",132:"メタモン",
+  133:"イーブイ",134:"シャワーズ",135:"サンダース",136:"ブースター",137:"ポリゴン",143:"カビゴン",
+  144:"フリーザー",145:"サンダー",146:"ファイヤー",147:"ミニリュウ",149:"カイリュー",150:"ミュウツー",151:"ミュウ",
+  152:"チコリータ",154:"メガニウム",155:"ヒノアラシ",157:"バクフーン",158:"ワニノコ",160:"オーダイル",
+  172:"ピチュー",175:"トゲピー",183:"マリル",194:"ウパー",195:"ヌオー",196:"エーフィ",197:"ブラッキー",
+  212:"ハッサム",249:"ルギア",250:"ホウオウ",251:"セレビィ",252:"キモリ",254:"ジュカイン",
+  255:"アチャモ",257:"バシャーモ",258:"ミズゴロウ",260:"ラグラージ",282:"サーナイト",330:"フライゴン",
+  359:"アブソル",376:"メタグロス",384:"レックウザ",385:"ジラーチ",387:"ナエトル",390:"ヒコザル",
+  393:"ポッチャマ",403:"コリンク",445:"ガブリアス",448:"ルカリオ",470:"リーフィア",471:"グレイシア",
+  491:"ダークライ",495:"ツタージャ",501:"ミジュマル",570:"ゾロア",609:"シャンデラ",635:"サザンドラ",
+  656:"ケロマツ",658:"ゲッコウガ",700:"ニンフィア",722:"モクロー",778:"ミミッキュ",813:"ヒバニー",
+  887:"ドラパルト",906:"ニャオハ",909:"ホゲータ",957:"カヌチャン",959:"デカヌチャン",980:"ドオー",
+};
+const NAMES_KO = {
+  1:"이상해씨",2:"이상해풀",3:"이상해꽃",4:"파이리",5:"리자드",6:"리자몽",
+  7:"꼬부기",8:"어니부기",9:"거북왕",10:"캐터피",12:"버터플",16:"구구",18:"피죤투",
+  25:"피카츄",26:"라이츄",27:"모래두지",35:"삐삐",36:"픽시",37:"식스테일",38:"나인테일",
+  39:"푸린",40:"푸크린",52:"나옹",54:"고라파덕",58:"가디",59:"윈디",63:"캐이시",
+  65:"후딘",68:"괴력몬",79:"야돈",81:"코일",92:"고오스",93:"고우스트",94:"팬텀",
+  104:"탕구리",113:"럭키",116:"쏘드라",118:"콘치",121:"아쿠스타",123:"스라크",
+  125:"에레브",126:"마그마",129:"잉어킹",130:"갸라도스",131:"라프라스",132:"메타몽",
+  133:"이브이",134:"샤미드",135:"쥬피썬더",136:"부스터",137:"폴리곤",143:"잠만보",
+  144:"프리져",145:"썬더",146:"파이어",147:"미뇽",149:"망나뇽",150:"뮤츠",151:"뮤",
+  152:"치코리타",154:"메가니움",155:"브케인",157:"블레이범",158:"리아코",160:"장크로다일",
+  172:"피츄",175:"토게피",183:"마릴",194:"우파",195:"누오",196:"에브이",197:"블래키",
+  212:"핫삼",249:"루기아",250:"칠색조",251:"세레비",252:"나무지기",254:"나무킹",
+  255:"아차모",257:"번치코",258:"물짱이",260:"대짱이",282:"가디안",330:"플라이곤",
+  359:"앱솔",376:"메타그로스",384:"레쿠쟈",385:"지라치",387:"모부기",390:"불꽃숭이",
+  393:"팽도리",403:"꼬링크",445:"한카리아스",448:"루카리오",470:"리피아",471:"글레이시아",
+  491:"다크라이",495:"주리비얀",501:"수댕이",570:"조로아",609:"샹델라",635:"삼삼드래",
+  656:"개구마르",658:"개굴닌자",700:"님피아",722:"나몰빼미",778:"따라큐",813:"염버니",
+  887:"드래펄트",906:"나오하",909:"뜨아거",957:"어리짱",959:"두드리짱",980:"토오",
+};
+
 export const GEN_TABS = [
-  { id: "gen1",  label: "Gen 1",   cn: "关都" },
-  { id: "gen2",  label: "Gen 2",   cn: "城都" },
-  { id: "gen3",  label: "Gen 3",   cn: "丰缘" },
-  { id: "gen4",  label: "Gen 4",   cn: "神奥" },
-  { id: "gen56", label: "Gen 5–6", cn: "合众/卡洛斯" },
-  { id: "gen79", label: "Gen 7–9", cn: "阿罗拉–帕底亚" },
+  { id: "gen1",  label: "Gen 1",   cn: "关都",      ja: "カントー",     ko: "관동" },
+  { id: "gen2",  label: "Gen 2",   cn: "城都",      ja: "ジョウト",     ko: "성도" },
+  { id: "gen3",  label: "Gen 3",   cn: "丰缘",      ja: "ホウエン",     ko: "호연" },
+  { id: "gen4",  label: "Gen 4",   cn: "神奥",      ja: "シンオウ",     ko: "신오" },
+  { id: "gen56", label: "Gen 5–6", cn: "合众/卡洛斯", ja: "イッシュ・カロス", ko: "하나·칼로스" },
+  { id: "gen79", label: "Gen 7–9", cn: "阿罗拉–帕底亚", ja: "アローラ〜パルデア", ko: "알로라–팔데아" },
 ];
 
 export const DEX_MAP = new Map();
 export const DEX_IDS = [];
 for (let i = 1; i <= NAMES.length; i++) {
-  DEX_MAP.set(i, { id: i, name: NAMES[i - 1], zh: NAMES_ZH[i - 1] ?? NAMES[i - 1], gen: "gen1" });
+  DEX_MAP.set(i, { id: i, name: NAMES[i - 1], zh: NAMES_ZH[i - 1] ?? NAMES[i - 1], ja: NAMES_JA[i] ?? NAMES[i - 1], ko: NAMES_KO[i] ?? NAMES[i - 1], gen: "gen1" });
   DEX_IDS.push(i);
 }
 for (const [id, name, gen] of EXTRA_POKEMON) {
-  DEX_MAP.set(id, { id, name, zh: EXTRA_ZH[id] ?? name, gen });
+  DEX_MAP.set(id, { id, name, zh: EXTRA_ZH[id] ?? name, ja: NAMES_JA[id] ?? name, ko: NAMES_KO[id] ?? name, gen });
   DEX_IDS.push(id);
 }
 
@@ -173,7 +215,15 @@ export const COUNT = DEX_IDS.length;
 export const hasDexId = (id) => DEX_MAP.has(id);
 export const nameEnOf = (id) => DEX_MAP.get(id)?.name ?? `#${id}`;
 export const nameZhOf = (id) => DEX_MAP.get(id)?.zh ?? nameEnOf(id);
-export const nameOf = (id) => (isZh() ? nameZhOf(id) : nameEnOf(id));
+export const nameOf = (id) => {
+  const e = DEX_MAP.get(id);
+  if (!e) return `#${id}`;
+  const l = lang();
+  if (l === "zh") return e.zh ?? e.name;
+  if (l === "ja") return e.ja ?? e.name;
+  if (l === "ko") return e.ko ?? e.name;
+  return e.name;
+};
 export const genOf = (id) => DEX_MAP.get(id)?.gen ?? "gen1";
 
 const FIRE_IDS = new Set([
@@ -468,8 +518,62 @@ export const ELEMENT_LABELS_EN = {
   impact:   "Norm",
 };
 
-export const elemLabel = (elem) => (isZh() ? (ELEMENT_LABELS[elem] ?? "一般") : (ELEMENT_LABELS_EN[elem] ?? "Norm"));
-export const moveName = (m) => (isZh() ? m.name : (m.en ?? m.name));
+export const ELEMENT_LABELS_JA = { fire: "ほのお", water: "みず", electric: "でんき", grass: "くさ", psychic: "エスパー", impact: "ノーマル" };
+export const ELEMENT_LABELS_KO = { fire: "불꽃", water: "물", electric: "전기", grass: "풀", psychic: "에스퍼", impact: "노말" };
+
+const MOVE_JA = {
+  flamethrower:"かえんほうしゃ", "fire-punch":"ほのおのパンチ", "lava-plume":"ふんえん", "fire-blast":"だいもんじ",
+  "flare-blitz":"フレアドライブ", overheat:"オーバーヒート", "flame-charge":"ニトロチャージ", "quick-slash":"でんこうせっか",
+  "morning-sun":"あさのひざし", protect:"まもる", surf:"なみのり", scald:"ねっとう", waterfall:"たきのぼり",
+  "hydro-pump":"ハイドロポンプ", "hydro-cannon":"ハイドロカノン", liquidation:"アクアブレイク", "aqua-jet":"アクアジェット",
+  "water-shuri":"みずしゅりけん", "ice-beam":"れいとうビーム", "aqua-ring":"アクアリング", thunderbolt:"10まんボルト",
+  discharge:"ほうでん", "spark-strike":"ワイルドボルト", thunder:"かみなり", "volt-tackle":"ボルテッカー",
+  "zap-cannon":"でんじほう", "electro-ball":"エレキボール", "zippy-zap":"ばちばちアクセル", "leaf-blade":"リーフブレード",
+  "energy-ball":"エナジーボール", "razor-leaf":"はっぱカッター", "solar-beam":"ソーラービーム", "leaf-storm":"リーフストーム",
+  "wood-hammer":"ウッドハンマー", "grassy-glide":"グラススライダー", synthesis:"こうごうせい", psychic:"サイコキネシス",
+  "shadow-ball":"シャドーボール", "psycho-cut":"サイコカッター", psystrike:"サイコブレイク", "dragon-pulse":"りゅうのはどう",
+  "shadow-sneak":"かげうち", "calm-mind":"めいそう", recover:"じこさいせい", "body-slam":"のしかかり",
+  "iron-tail":"アイアンテール", "air-slash":"エアスラッシュ", "giga-impact":"ギガインパクト", "hyper-beam":"はかいこうせん",
+  earthquake:"じしん", "close-combat":"インファイト", "quick-attack":"でんこうせっか", "extreme-spd":"しんそく",
+  "swords-dance":"つるぎのまい", "pika-volt":"10まんボルト", "rai-volt":"ボルテッカー", "zard-blast":"ブラストバーン",
+  "blast-hydro":"ハイドロカノン", "venu-frenzy":"ハードプラント", "geng-shadow":"シャドーボール",
+  "m2-strike":"サイコブレイク", "snor-giga":"ギガインパクト", "luca-aura":"はどうだん", "gren-shuri":"みずしゅりけん",
+  "ray-ascent":"ガリョウテンセイ",
+};
+const MOVE_KO = {
+  flamethrower:"화염방사", "fire-punch":"불꽃펀치", "lava-plume":"분연", "fire-blast":"불대문자",
+  "flare-blitz":"플레어드라이브", overheat:"오버히트", "flame-charge":"니트로차지", "quick-slash":"전광석화",
+  "morning-sun":"아침햇살", protect:"방어", surf:"파도타기", scald:"열탕", waterfall:"폭포오르기",
+  "hydro-pump":"하이드로펌프", "hydro-cannon":"하이드로캐논", liquidation:"아쿠아브레이크", "aqua-jet":"아쿠아제트",
+  "water-shuri":"물수리검", "ice-beam":"냉동빔", "aqua-ring":"아쿠아링", thunderbolt:"10만볼트",
+  discharge:"방전", "spark-strike":"와일드볼트", thunder:"번개", "volt-tackle":"볼트태클",
+  "zap-cannon":"전자포", "electro-ball":"일렉트릭볼", "zippy-zap":"파찌파찌액셀", "leaf-blade":"리프블레이드",
+  "energy-ball":"에너지볼", "razor-leaf":"잎날가르기", "solar-beam":"솔라빔", "leaf-storm":"리프스톰",
+  "wood-hammer":"우드해머", "grassy-glide":"그래스슬라이더", synthesis:"광합성", psychic:"사이코키네시스",
+  "shadow-ball":"섀도볼", "psycho-cut":"사이코커터", psystrike:"사이코브레이크", "dragon-pulse":"용의파동",
+  "shadow-sneak":"야습", "calm-mind":"명상", recover:"HP회복", "body-slam":"누르기",
+  "iron-tail":"아이언테일", "air-slash":"에어슬래시", "giga-impact":"기가임팩트", "hyper-beam":"파괴광선",
+  earthquake:"지진", "close-combat":"인파이트", "quick-attack":"전광석화", "extreme-spd":"신속",
+  "swords-dance":"칼춤", "pika-volt":"10만볼트", "rai-volt":"볼트태클", "zard-blast":"블러스트번",
+  "blast-hydro":"하이드로캐논", "venu-frenzy":"하드플랜트", "geng-shadow":"섀도볼",
+  "m2-strike":"사이코브레이크", "snor-giga":"기가임팩트", "luca-aura":"파동탄", "gren-shuri":"물수리검",
+  "ray-ascent":"화룡점정",
+};
+
+export const elemLabel = (elem) => {
+  const l = lang();
+  if (l === "zh") return ELEMENT_LABELS[elem] ?? "一般";
+  if (l === "ja") return ELEMENT_LABELS_JA[elem] ?? "ノーマル";
+  if (l === "ko") return ELEMENT_LABELS_KO[elem] ?? "노말";
+  return ELEMENT_LABELS_EN[elem] ?? "Norm";
+};
+export const moveName = (m) => {
+  const l = lang();
+  if (l === "zh") return m.name;
+  if (l === "ja") return MOVE_JA[m.id] ?? m.en ?? m.name;
+  if (l === "ko") return MOVE_KO[m.id] ?? m.en ?? m.name;
+  return m.en ?? m.name;
+};
 
 // Rich authentic Pokemon move library grouped by element & tactical slot (reliable / heavy / speed / tactic)
 // so each Pokemon rolls 4 unique species-fitting moves per battle!
@@ -744,10 +848,18 @@ export function tokenDamageMult(tokens) {
 
 export function formatTokens(tokens) {
   const t = Math.max(0, Math.round(Number(tokens) || 0));
-  if (isZh()) {
-    if (t >= 100000000) return `${(t / 100000000).toFixed(2)}亿`;
+  const l = lang();
+  if (l === "zh" || l === "ja") {
+    const bil = l === "zh" ? "亿" : "億";
+    if (t >= 100000000) return `${(t / 100000000).toFixed(2)}${bil}`;
     if (t >= 10000) return `${(t / 10000).toFixed(t >= 1000000 ? 0 : 1)}万`;
     if (t >= 1000) return `${(t / 1000).toFixed(1)}千`;
+    return String(t);
+  }
+  if (l === "ko") {
+    if (t >= 100000000) return `${(t / 100000000).toFixed(2)}억`;
+    if (t >= 10000) return `${(t / 10000).toFixed(t >= 1000000 ? 0 : 1)}만`;
+    if (t >= 1000) return `${(t / 1000).toFixed(1)}천`;
     return String(t);
   }
   if (t >= 1000000) return `${(t / 1000000).toFixed(t >= 10000000 ? 1 : 2)}M`;
@@ -1602,7 +1714,9 @@ export function matchPokedex(query, genTab = "all") {
     if (!f && genTab && genTab !== "all" && entry.gen !== genTab) continue;
     const en = entry.name.toLowerCase();
     const zh = (entry.zh || "").toLowerCase();
-    if (!f || en.includes(f) || zh.includes(f) || String(id) === f.replace(/^0+/, "") || String(id).padStart(3, "0").startsWith(f)) {
+    const ja = (entry.ja || "").toLowerCase();
+    const ko = (entry.ko || "").toLowerCase();
+    if (!f || en.includes(f) || zh.includes(f) || ja.includes(f) || ko.includes(f) || String(id) === f.replace(/^0+/, "") || String(id).padStart(3, "0").startsWith(f)) {
       out.push(id);
     }
   }
