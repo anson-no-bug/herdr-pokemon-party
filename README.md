@@ -75,12 +75,14 @@
 
 ---
 
-### 4. Shiny Encounters & Growth System
+### 4. Unique Generation, Shiny Odds & Growth System
 
-- **True Random Shiny Odds (`1/64`)**: No manual shiny cheat switch — every new agent or newly chosen species naturally rolls a `1/64` (~1.56%) chance to sparkle as a rare **Shiny ✨** with a celebration toast, preserved through evolution.
+- **Three Unique Traits Rolled on Generation**: Every time a new Pokémon is generated (new agent or switching species), it independently rolls its own identity:
+  - **Rare Shiny Odds (`1/64`)**: Purely random ~1.56% chance (no manual cheat switch) to sparkle as a rare **Shiny ✨** with a celebration toast, preserved through evolution.
+  - **Random Individual Size (`XS / S / M / L / XL`)**: Each Pokémon rolls a unique body scale so even two Pikachus stand noticeably different in size.
+  - **Random Fixed 4-Move Loadout**: Automatically rolls 4 moves from its elemental move pool (including signature moves) and locks them in for battle until you switch species.
 - **Work-XP Leveling & Evolution**: Active coding earns Work-XP to level up (`LV`) and evolve automatically; toggle **Lock Evo** (Everstone) anytime to keep a favorite form.
-- **Individual Sizes & Clean Nameplates**: Each Pokémon rolls an `XS–XL` body scale; only the project name sits underfoot while hovering reveals a crisp split `[ LV | Name ]` RPG plate.
-- **Gen 1–9 Pokédex Picker**: Fast search by English name, Chinese name, or `#number` with on-demand icon caching.
+- **Clean Nameplates & Gen 1–9 Pokédex**: Only the project name sits underfoot while hovering reveals a split `[ LV | Name ]` RPG plate; search all Gen 1–9 Pokémon by name or `#number` with on-demand icon caching.
 
 ---
 
