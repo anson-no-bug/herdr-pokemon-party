@@ -9,10 +9,10 @@
 [![Herdr](https://img.shields.io/badge/Herdr-Theme%20%26%20Mod-dc2626?style=flat-square)](https://herdr.dev)
 [![Lightweight](https://img.shields.io/badge/Size-~1.5MB-16a34a?style=flat-square)](#lightweight-by-design)
 [![Agents](https://img.shields.io/badge/Agents-Claude%20%7C%20Codex%20%7C%20Pi%20%7C%20Antigravity-7c3aed?style=flat-square)](#1-pokémon-battle-system)
-[![Bilingual](https://img.shields.io/badge/i18n-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-2563eb?style=flat-square)](README_zh.md)
+[![Languages](https://img.shields.io/badge/i18n-EN%20%7C%20中文%20%7C%20日本語%20%7C%20한국어-2563eb?style=flat-square)](README_zh.md)
 
 <p>
-  <b>English</b> &nbsp;|&nbsp; <a href="README_zh.md">简体中文</a>
+  <b>English</b> &nbsp;|&nbsp; <a href="README_zh.md">简体中文</a> &nbsp;|&nbsp; <a href="README_ja.md">日本語</a> &nbsp;|&nbsp; <a href="README_ko.md">한국어</a>
 </p>
 
 </div>

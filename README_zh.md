@@ -9,10 +9,10 @@
 [![Herdr](https://img.shields.io/badge/Herdr-Theme%20%26%20Mod-dc2626?style=flat-square)](https://herdr.dev)
 [![Lightweight](https://img.shields.io/badge/仓库体积-~1.5MB-16a34a?style=flat-square)](#轻量化与性能承诺)
 [![Agents](https://img.shields.io/badge/支持智能体-Claude%20%7C%20Codex%20%7C%20Pi%20%7C%20Antigravity-7c3aed?style=flat-square)](#1-宝可梦对战系统)
-[![Bilingual](https://img.shields.io/badge/语言-English%20%7C%20%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-2563eb?style=flat-square)](README.md)
+[![Languages](https://img.shields.io/badge/语言-EN%20%7C%20中文%20%7C%20日本語%20%7C%20한국어-2563eb?style=flat-square)](README.md)
 
 <p>
-  <a href="README.md">English</a> &nbsp;|&nbsp; <b>简体中文</b>
+  <a href="README.md">English</a> &nbsp;|&nbsp; <b>简体中文</b> &nbsp;|&nbsp; <a href="README_ja.md">日本語</a> &nbsp;|&nbsp; <a href="README_ko.md">한국어</a>
 </p>
 
 </div>
