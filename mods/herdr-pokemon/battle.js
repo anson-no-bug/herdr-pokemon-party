@@ -596,19 +596,19 @@ export default class EmbeddedBattle {
     return div().text_size(13).font_bold().text_color("#ffffff").child(f.name.slice(0, 2));
   }
 
-  // Sleek Compact Centered VS Showdown Card over Frosted Dimmed Current Habitat Backdrop!
+  // Clean, Restrained GBA-Framed VS Showdown Plaque over Dimmed Current Habitat Backdrop
   renderIntro(cx, width, height) {
     const slide = this.introSlide;
     const mapBox = computeMapBox(width, height);
-    const panelW = Math.min(width - 24, 444);
-    const panelH = Math.min(height - 18, 176);
-    const portSz = Math.max(70, Math.min(86, panelH - 82));
-    const cardW = portSz + 18;
-    const leftTarget = 28;
-    const rightTarget = panelW - cardW - 28;
-    const cardTop = Math.max(12, Math.round((panelH - (portSz + 40)) / 2) - 4);
+    const panelW = Math.min(width - 28, 412);
+    const panelH = Math.min(height - 20, 168);
+    const portSz = Math.max(66, Math.min(80, panelH - 86));
+    const cardW = portSz + 32;
+    const leftTarget = 24;
+    const rightTarget = panelW - cardW - 24;
+    const cardTop = Math.max(12, Math.round((panelH - (portSz + 46)) / 2) - 4);
 
-    const kofPortraitCard = (id, f, isP1, targetLeft, startLeft) =>
+    const fighterCard = (id, f, isP1, targetLeft, startLeft) =>
       v_flex()
         .id(id)
         .absolute()
@@ -616,56 +616,42 @@ export default class EmbeddedBattle {
         .top(cardTop)
         .w(cardW)
         .items_center()
-        .gap(5)
-        .transition("left", { duration: 320, easing: "ease-out" })
+        .gap(6)
+        .transition("left", { duration: 300, easing: "ease-out" })
+        // Classic GBA warm-ivory trading-card portrait frame (clean, zero neon clash!)
         .child(
           div()
-            .relative()
             .size(portSz + 8)
             .p(3)
-            .rounded(10)
-            .bg(isP1 ? "#1e3a8a" : "#7f1d1d")
+            .rounded(9)
+            .bg("#f8f8e8")
             .border(2)
-            .border_color(isP1 ? "#60a5fa" : "#f87171")
+            .border_color("#2c423a")
             .shadow_md()
             .child(
               h_flex()
                 .size_full()
-                .rounded(7)
-                .bg("#0f172a")
+                .rounded(5)
+                .bg("#1e293b")
                 .items_center()
                 .justify_center()
                 .overflow_hidden()
                 .child(this.portraitEl(f, portSz)),
-            )
-            .child(
-              div()
-                .absolute()
-                .top(-7)
-                .when(isP1, (el) => el.left(-6).bg("#2563eb").border_color("#93c5fd"))
-                .when(!isP1, (el) => el.right(-6).bg("#dc2626").border_color("#fca5a5"))
-                .px(6)
-                .py(1)
-                .rounded(4)
-                .border_1()
-                .text_size(9)
-                .font_bold()
-                .text_color("#ffffff")
-                .child(isP1 ? tr("我方", "YOU", "自分", "아군") : tr("对手", "FOE", "相手", "상대")),
             ),
         )
+        // Clean understated name + role dot + multiplier row
         .child(
-          h_flex()
-            .px(7)
-            .py(1.5)
-            .gap(5)
-            .items_center()
-            .rounded_full()
-            .bg("#090d16ee")
-            .border_1()
-            .border_color(isP1 ? "#3b82f688" : "#ef444488")
-            .child(div().text_size(10.5).font_bold().text_color("#ffffff").child(`${f.name}${f.shiny ? "✨" : ""}`))
-            .child(div().text_size(9.5).font_bold().text_color("#facc15").child(`×${f.tokenMult.toFixed(2)}`)),
+          v_flex().items_center().gap(1.5)
+            .child(
+              h_flex().gap(4).items_center()
+                .child(div().size(6).rounded_full().bg(isP1 ? "#60a5fa" : "#f87171"))
+                .child(div().text_size(11.5).font_bold().text_color("#f8fafc").child(`${f.name}${f.shiny ? " ✨" : ""}`)),
+            )
+            .child(
+              h_flex().gap(5).items_center()
+                .child(div().text_size(9).font_medium().text_color("#94a3b8").child(isP1 ? tr("我方", "YOU", "自分", "아군") : tr("对手", "FOE", "相手", "상대")))
+                .child(div().text_size(9.5).font_bold().text_color("#fbbf24").child(`×${f.tokenMult.toFixed(2)}`)),
+            ),
         );
 
     return h_flex()
@@ -674,11 +660,11 @@ export default class EmbeddedBattle {
       .size_full()
       .items_center()
       .justify_center()
-      .bg("#0b101d")
+      .bg("#0c1118")
       .overflow_hidden()
       .cursor_pointer()
       .on_click((_e, cx) => this.enterChoosePhase(cx))
-      // Current living habitat map softened behind a cinematic frosted dark scrim!
+      // Softly dimmed current habitat biome map as atmospheric backdrop
       .child(
         image(mapAsset(this.biomeId))
           .absolute()
@@ -686,10 +672,10 @@ export default class EmbeddedBattle {
           .top(mapBox.top)
           .w(mapBox.drawW)
           .h(mapBox.drawH)
-          .opacity(0.42),
+          .opacity(0.46),
       )
-      .child(div().absolute().inset_0().bg("#0b101d").opacity(0.54))
-      // Sleek Compact Centered VS Showdown Card (never stretched across ultrawide screens!)
+      .child(div().absolute().inset_0().bg("#0c1118").opacity(0.52))
+      // Unified clean charcoal glass plaque (NO muddy blue/red split, NO leaked lines!)
       .child(
         div()
           .relative()
@@ -697,35 +683,31 @@ export default class EmbeddedBattle {
           .h(panelH)
           .rounded(14)
           .overflow_hidden()
-          .bg("#0f172ae6")
-          .border(1.5)
-          .border_color("#475569aa")
+          .bg("#141a24ee")
+          .border_1()
+          .border_color("#ffffff24")
           .shadow_lg()
-          // Subtle blue/red aura split contained strictly inside the compact card
-          .child(div().absolute().left(0).top(0).w(Math.round(panelW / 2)).h_full().bg("#1d4ed8").opacity(0.14))
-          .child(div().absolute().right(0).top(0).w(Math.round(panelW / 2)).h_full().bg("#dc2626").opacity(0.14))
-          .child(div().absolute().left(0).top(0).w_full().h(2).bg("#facc1544"))
-          .child(kofPortraitCard("intro-p1-band", this.p1, true, leftTarget, leftTarget - 96))
-          .child(kofPortraitCard("intro-cpu-band", this.cpu, false, rightTarget, rightTarget + 96))
+          .child(fighterCard("intro-p1-band", this.p1, true, leftTarget, leftTarget - 72))
+          .child(fighterCard("intro-cpu-band", this.cpu, false, rightTarget, rightTarget + 72))
           .child(
             h_flex()
               .absolute()
               .inset_0()
-              .pb(12)
+              .pb(18)
               .items_center()
               .justify_center()
               .child(
                 div()
-                  .w(108)
-                  .h(86)
-                  .loop("opacity", { from: 0.88, to: 1.0, period: 320 })
-                  .child(image(iconAsset("vs-emblem")).w(108).h(86)),
+                  .w(104)
+                  .h(82)
+                  .loop("opacity", { from: 0.90, to: 1.0, period: 360 })
+                  .child(image(iconAsset("vs-emblem")).w(104).h(82)),
               ),
           )
           .child(
             h_flex().absolute().left(0).bottom(7).w_full().justify_center()
               .child(
-                div().text_size(9.5).text_color("#94a3b8").child(
+                div().text_size(9.5).text_color("#64748b").child(
                   tr("点击或按空格跳过", "Click or press Space to skip", "クリック / Space でスキップ", "클릭 또는 Space로 건너뛰기"),
                 ),
               ),
