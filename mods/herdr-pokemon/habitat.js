@@ -1840,7 +1840,7 @@ export default class Habitat {
               .shadow_lg()
               .loop("opacity", { from: 0.85, to: 1.0, period: 340 })
               .child(image(iconAsset("vs-emblem")).w(30).h(24))
-              .child(div().text_size(10).font_bold().text_color("#ffffff").child(tr("松手开战", "Release!"))),
+              .child(div().text_size(10).font_bold().text_color("#ffffff").child(tr("松手开战", "Release!", "離してバトル！", "놓아서 배틀!"))),
           ),
       );
     }
@@ -1933,6 +1933,8 @@ export default class Habitat {
             tr(
               `生态与语言设置 · 地图(${biomeIntervalMin() ? `${biomeIntervalMin()}分` : "关"}) / 天气(${weatherIntervalMin() ? `${weatherIntervalMin()}分` : "关"})`,
               `Habitat & Language · Map(${biomeIntervalMin() ? `${biomeIntervalMin()}m` : "Off"}) / Weather(${weatherIntervalMin() ? `${weatherIntervalMin()}m` : "Off"})`,
+              `生態園＆言語設定 · マップ(${biomeIntervalMin() ? `${biomeIntervalMin()}分` : "オフ"}) / 天候(${weatherIntervalMin() ? `${weatherIntervalMin()}分` : "オフ"})`,
+              `생태원 및 언어 설정 · 맵(${biomeIntervalMin() ? `${biomeIntervalMin()}분` : "끄기"}) / 날씨(${weatherIntervalMin() ? `${weatherIntervalMin()}분` : "끄기"})`,
             ),
             () => openHabitatPrefs(),
           ),
@@ -1941,7 +1943,7 @@ export default class Habitat {
           iconBtn(
             "hab-biome",
             `env-${biome.id}`,
-            tr(`${biome.cn} · 点击切换地图`, `${biome.name} · Click to switch map`),
+            tr(`${biome.cn} · 点击切换地图`, `${biome.name} · Click to switch map`, `${biome.ja} · クリックでマップ切替`, `${biome.ko} · 클릭하여 맵 전환`),
             (_e, cx) => {
               const idx = (BIOMES.findIndex((x) => x.id === biome.id) + 1) % BIOMES.length;
               this.lastBiomeRotateAt = Date.now();
@@ -1954,7 +1956,7 @@ export default class Habitat {
           iconBtn(
             "hab-weather",
             `w-${weatherObj.id}`,
-            tr(`${weatherObj.cn} · 点击切换天气`, `${weatherObj.label} · Click for next weather`),
+            tr(`${weatherObj.cn} · 点击切换天气`, `${weatherObj.label} · Click for next weather`, `${weatherObj.ja} · クリックで天候切替`, `${weatherObj.ko} · 클릭하여 날씨 전환`),
             (_e, cx) => {
               this.weatherOffset = (this.weatherOffset + 1) % WEATHER_FLOW.length;
               const nextW = activeWeather(Date.now(), this.weatherOffset).id;
@@ -1979,7 +1981,7 @@ export default class Habitat {
           .justify_center()
           .cursor_pointer()
           .hover((s) => s.opacity(0.86))
-          .tooltip(tr("收入大师球并隐藏生态园", "Recall into Master Ball & hide Habitat"))
+          .tooltip(tr("收入大师球并隐藏生态园", "Recall into Master Ball & hide Habitat", "マスターボールに生態園を収納", "마스터볼에 생태원 수납"))
           .on_click((e, cx) => {
             cx.stop_propagation();
             this.triggerRecall(cx);

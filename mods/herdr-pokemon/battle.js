@@ -214,7 +214,12 @@ export default class EmbeddedBattle {
   enterChoosePhase(cx) {
     if (this.closed) return;
     this.phase = "choose";
-    this.logText = tr(`你要让 ${this.p1.name} 做什么？`, `What will ${this.p1.name} do?`);
+    this.logText = tr(
+      `你要让 ${this.p1.name} 做什么？`,
+      `What will ${this.p1.name} do?`,
+      `${this.p1.name} は どうする？`,
+      `${this.p1.name}는 무엇을 할까?`,
+    );
     cx.notify();
     if (this.autoMode) {
       cx.timer.after(460, (cx) => {
@@ -326,27 +331,33 @@ export default class EmbeddedBattle {
         const amt = Math.round(atk.maxHp * 0.36);
         atk.hp = Math.min(atk.maxHp, atk.hp + amt);
         atk.lungeY = -8;
-        this.addPopup(atkSide, tr(`回复 +${amt}`, `+${amt} HP`), "#16a34a");
+        this.addPopup(atkSide, tr(`回复 +${amt}`, `+${amt} HP`, `回復 +${amt}`, `회복 +${amt}`), "#16a34a");
         this.logText = tr(
           `${whoZh}${atk.name} 使出了【${mName}】，体力回复了！`,
           `${whoEn}${atk.name} used ${mName} and restored HP!`,
+          `${atk.name} の ${mName}！ HP が回復した！`,
+          `${atk.name}의 ${mName}! 체력이 회복되었다!`,
         );
       } else if (move.kind === "buff") {
         atk.atkBoost = Math.min(2, atk.atkBoost + 1);
         atk.lungeY = -8;
-        this.addPopup(atkSide, tr(`攻击提升 ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`, `ATK UP ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`), "#d97706");
+        this.addPopup(atkSide, tr(`攻击提升 ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`, `ATK UP ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`, `こうげきUP ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`, `공격 UP ×${(1 + atk.atkBoost * 0.35).toFixed(2)}`), "#d97706");
         this.logText = tr(
           `${whoZh}${atk.name} 使出了【${mName}】，攻击大幅提高！`,
           `${whoEn}${atk.name} used ${mName}! Attack rose sharply!`,
+          `${atk.name} の ${mName}！ こうげきがぐーんと上がった！`,
+          `${atk.name}의 ${mName}! 공격이 크게 올랐다!`,
         );
       } else {
         atk.guarding = true;
         atk.atkBoost = Math.min(2, atk.atkBoost + 0.5);
         atk.lungeY = -5;
-        this.addPopup(atkSide, tr("守住！", "PROTECT!"), "#2563eb");
+        this.addPopup(atkSide, tr("守住！", "PROTECT!", "まもった！", "방어!"), "#2563eb");
         this.logText = tr(
           `${whoZh}${atk.name} 使出了【${mName}】，进入防御姿态！`,
           `${whoEn}${atk.name} protected itself with ${mName}!`,
+          `${atk.name} は ${mName} で身を守った！`,
+          `${atk.name}는 ${mName}로 몸을 지켰다!`,
         );
       }
       cx.notify();
@@ -381,10 +392,12 @@ export default class EmbeddedBattle {
     const missed = Math.random() * 100 > acc;
 
     if (missed) {
-      this.addPopup(isP1 ? "cpu" : "p1", tr("未命中！", "MISS!"), "#64748b");
+      this.addPopup(isP1 ? "cpu" : "p1", tr("未命中！", "MISS!", "はずれた！", "빗나갔다!"), "#64748b");
       this.logText = tr(
         `${whoZh}${atk.name} 使出了【${mName}】，但没有命中！`,
         `${whoEn}${atk.name} used ${mName}, but it missed!`,
+        `${atk.name} の ${mName}！ しかし外れた！`,
+        `${atk.name}의 ${mName}! 하지만 빗나갔다!`,
       );
       cx.notify();
       cx.timer.after(780, (cx) => {
@@ -410,6 +423,8 @@ export default class EmbeddedBattle {
     this.logText = tr(
       `${whoZh}${atk.name} 使出了【${mName}】！`,
       `${whoEn}${atk.name} used ${mName}!`,
+      `${atk.name} の ${mName}！`,
+      `${atk.name}의 ${mName}!`,
     );
     cx.notify();
 
@@ -434,21 +449,27 @@ export default class EmbeddedBattle {
 
       const defSide = isP1 ? "cpu" : "p1";
       const popTag = def.guarding
-        ? tr(`挡下 -${dmg}`, `GUARD -${dmg}`)
+        ? tr(`挡下 -${dmg}`, `GUARD -${dmg}`, `ガード -${dmg}`, `방어 -${dmg}`)
         : crit
-          ? tr(`要害 -${dmg}`, `CRIT -${dmg}`)
+          ? tr(`要害 -${dmg}`, `CRIT -${dmg}`, `きゅうしょ -${dmg}`, `급소 -${dmg}`)
           : eff > 1.1
-            ? tr(`绝佳 -${dmg}`, `SUPER -${dmg}`)
+            ? tr(`绝佳 -${dmg}`, `SUPER -${dmg}`, `ばつぐん -${dmg}`, `효과 굉장 -${dmg}`)
             : `-${dmg}`;
       const popCol = def.guarding ? "#2563eb" : crit ? "#dc2626" : eff > 1.1 ? "#ea580c" : ELEMENT_COLORS[move.elem];
       this.addPopup(defSide, popTag, popCol);
 
-      const recoilTxt = rec ? tr(`（反伤 -${rec}）`, ` (Recoil -${rec})`) : "";
-      const effTxt = eff > 1.1 ? tr(" 效果绝佳！", " Super effective!") : eff < 0.9 ? tr(" 效果微弱…", " Not very effective...") : "";
-      const critTxt = crit ? tr(" 击中要害！", " Critical hit!") : "";
+      const recoilTxt = rec ? tr(`（反伤 -${rec}）`, ` (Recoil -${rec})`, `（反動 -${rec}）`, ` (반동 -${rec})`) : "";
+      const effTxt = eff > 1.1
+        ? tr(" 效果绝佳！", " Super effective!", " 効果はばつぐんだ！", " 효과가 굉장했다!")
+        : eff < 0.9
+          ? tr(" 效果微弱…", " Not very effective...", " 効果はいまひとつ…", " 효과가 별로인 듯하다…")
+          : "";
+      const critTxt = crit ? tr(" 击中要害！", " Critical hit!", " 急所に当たった！", " 급소에 맞았다!") : "";
       this.logText = tr(
         `${whoZh}${atk.name} 使出了【${mName}】！造成 ${dmg} 伤害${critTxt}${effTxt}${recoilTxt}`,
         `${whoEn}${atk.name} used ${mName}! -${dmg} HP.${critTxt}${effTxt}${recoilTxt}`,
+        `${atk.name} の ${mName}！ ${dmg} ダメージ！${critTxt}${effTxt}${recoilTxt}`,
+        `${atk.name}의 ${mName}! ${dmg} 대미지!${critTxt}${effTxt}${recoilTxt}`,
       );
       cx.notify();
     });
@@ -509,8 +530,8 @@ export default class EmbeddedBattle {
     const winF = winSide === "p1" ? this.p1 : this.cpu;
     const loseF = winSide === "p1" ? this.cpu : this.p1;
     this.logText = winSide === "p1"
-      ? tr(`对手 ${loseF.name} 倒下了！我方 ${winF.name} 获胜！（经验 +45 / +20）`, `Foe ${loseF.name} fainted! ${winF.name} won! (+45 / +20 XP)`)
-      : tr(`我方 ${loseF.name} 倒下了！对手 ${winF.name} 获胜！（经验 +45 / +20）`, `${loseF.name} fainted! Foe ${winF.name} won! (+45 / +20 XP)`);
+      ? tr(`对手 ${loseF.name} 倒下了！我方 ${winF.name} 获胜！（经验 +45 / +20）`, `Foe ${loseF.name} fainted! ${winF.name} won! (+45 / +20 XP)`, `相手の ${loseF.name} はたおれた！ ${winF.name} の勝ち！（経験値 +45 / +20）`, `상대 ${loseF.name}가 쓰러졌다! ${winF.name} 승리! (경험치 +45 / +20)`)
+      : tr(`我方 ${loseF.name} 倒下了！对手 ${winF.name} 获胜！（经验 +45 / +20）`, `${loseF.name} fainted! Foe ${winF.name} won! (+45 / +20 XP)`, `${loseF.name} はたおれた！ 相手の ${winF.name} の勝ち！（経験値 +45 / +20）`, `${loseF.name}가 쓰러졌다! 상대 ${winF.name} 승리! (경험치 +45 / +20)`);
 
     try {
       const updates = {};
@@ -1138,11 +1159,11 @@ export default class EmbeddedBattle {
                             // Header row with turn + minimal controls (no swap button!)
                             .child(
                               h_flex().items_center().justify_between().gap(4)
-                                .child(div().text_size(9.5).font_bold().text_color("#fef08a").child(tr(`第 ${this.turn} 回合 · 宝可梦对战`, `Turn ${this.turn} · Pokémon Battle`)))
+                                .child(div().text_size(9.5).font_bold().text_color("#fef08a").child(tr(`第 ${this.turn} 回合 · 宝可梦对战`, `Turn ${this.turn} · Pokémon Battle`, `${this.turn} ターン目 · ポケモンバトル`, `${this.turn}턴 · 포켓몬 배틀`)))
                                 .child(
                                   h_flex().gap(5).items_center()
                                     .child(
-                                      gbaMiniBtn("bat-auto", this.autoMode ? tr("自动:开", "Auto: On") : tr("自动", "Auto"), this.autoMode, tr("开启后自动替我方出招", "Auto-battle for your Pokémon"), (_e, cx) => {
+                                      gbaMiniBtn("bat-auto", this.autoMode ? tr("自动:开", "Auto: On", "オート:ON", "자동:ON") : tr("自动", "Auto", "オート", "자동"), this.autoMode, tr("开启后自动替我方出招", "Auto-battle for your Pokémon", "自動で技を選択して戦います", "자동으로 기술을 선택해 전투합니다"), (_e, cx) => {
                                         this.autoMode = !this.autoMode;
                                         cx.notify();
                                         if (this.autoMode && this.phase === "choose") {
@@ -1162,7 +1183,7 @@ export default class EmbeddedBattle {
                                         .cursor_pointer()
                                         .hover((s) => s.text_color("#ffffff"))
                                         .on_click((_e, cx) => this.close(cx))
-                                        .child(tr("ESC 退出", "ESC Exit")),
+                                        .child(tr("ESC 退出", "ESC Exit", "ESC 終了", "ESC 종료")),
                                     ),
                                 ),
                             )
@@ -1216,14 +1237,14 @@ export default class EmbeddedBattle {
                                   .text_size(13)
                                   .font_bold()
                                   .text_color(this.winner === "p1" ? "#15803d" : "#b91c1c")
-                                  .child(this.winner === "p1" ? tr("战斗胜利！", "Victory!") : tr("战斗结束", "Battle Over")),
+                                  .child(this.winner === "p1" ? tr("战斗胜利！", "Victory!", "バトル勝利！", "배틀 승리!") : tr("战斗结束", "Battle Over", "バトル終了", "배틀 종료")),
                               )
                               .child(
                                 div()
                                   .text_size(10.5)
                                   .font_medium()
                                   .text_color("#54645c")
-                                  .child(tr("按 ESC 退出", "Press ESC to exit")),
+                                  .child(tr("按 ESC 退出", "Press ESC to exit", "ESC キーで戻る", "ESC 키를 눌러 나가기")),
                               ),
                           ),
                         ),
