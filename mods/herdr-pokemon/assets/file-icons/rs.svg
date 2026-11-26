@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M3 1.5h6.5L13 5v9.5a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1z" fill="#ea580c" opacity="0.14" stroke="#ea580c" stroke-width="1.1"/>
+  <path d="M9.5 1.5V5H13" fill="none" stroke="#ea580c" stroke-width="1.1"/>
+  <rect x="2" y="7.2" width="12" height="6.8" rx="1.6" fill="#ea580c"/>
+  <text x="8" y="12.6" text-anchor="middle" font-family="ui-monospace,SFMono-Regular,Menlo,sans-serif" font-weight="700" font-size="6.2" fill="#ffffff">RS</text>
+</svg>

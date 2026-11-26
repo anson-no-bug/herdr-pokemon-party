@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 110">
+  <!-- Diagonal arcade lightning slash & energy flare behind VS -->
+  <polygon points="104,4 116,4 66,54 88,54 34,106 22,106 68,58 46,58" fill="#facc15" opacity="0.92"/>
+  <polygon points="108,8 113,8 65,55 82,55 32,102 27,102 70,57 52,57" fill="#fef08a"/>
+  <!-- Outer fiery crimson-orange energy shards -->
+  <polygon points="16,24 44,18 32,34" fill="#ef4444" opacity="0.85"/>
+  <polygon points="124,86 96,92 108,76" fill="#3b82f6" opacity="0.85"/>
+  <polygon points="12,68 34,62 24,74" fill="#f97316" opacity="0.8"/>
+  <polygon points="128,40 106,46 116,34" fill="#38bdf8" opacity="0.8"/>
+
+  <!-- Hard arcade drop shadow under VS letters -->
+  <polygon points="18,22 39,22 48,64 66,22 84,22 54,90 36,90" fill="#090d16" opacity="0.88"/>
+  <path d="M126,28 L120,42 L95,42 L92,50 L114,50 C123,50 128,57 125,68 L121,81 C118,89 111,94 100,94 L66,94 L72,80 L99,80 L103,70 L82,70 C73,70 68,63 71,52 L75,39 C78,31 85,26 96,26 Z" fill="#090d16" opacity="0.88"/>
+
+  <!-- Bold italicized 'V' (metallic gold-crimson bevel) -->
+  <polygon points="14,18 36,18 45,62 64,18 83,18 52,86 33,86" fill="#dc2626" stroke="#111827" stroke-width="4.5" stroke-linejoin="round"/>
+  <polygon points="18,21 34,21 44,68 65,21 79,21 50,82 36,82" fill="#f97316"/>
+  <!-- Upper gold metallic sheen facets on left & right arms of 'V' (clean open V-notch!) -->
+  <polygon points="18,21 34,21 40,52 27,52" fill="#facc15"/>
+  <polygon points="65,21 79,21 63,52 51,52" fill="#facc15"/>
+  <polygon points="20,23 32,23 35,34 25,34" fill="#fef9c3" opacity="0.9"/>
+  <polygon points="66,23 76,23 70,34 61,34" fill="#fef9c3" opacity="0.9"/>
+
+  <!-- Bold italicized 'S' overlapping dynamically with 'V' -->
+  <path d="M123,24 L117,39 L92,39 L89,47 L111,47 C120,47 125,54 122,65 L118,78 C115,86 108,91 97,91 L63,91 L69,76 L96,76 L100,66 L79,66 C70,66 65,59 68,48 L72,35 C75,27 82,22 93,22 Z"
+        fill="#dc2626" stroke="#111827" stroke-width="4.5" stroke-linejoin="round"/>
+  <path d="M120,26 L115,37 L90,37 L86,49 L110,49 C117,49 121,55 119,64 L115,76 C113,83 107,87 97,87 L67,87 L72,78 L98,78 L103,64 L80,64 C73,64 69,58 71,49 L75,37 C77,30 83,26 93,26 Z"
+        fill="#f97316"/>
+  <!-- Metallic gold upper highlight on 'S' -->
+  <path d="M120,26 L115,37 L90,37 L86,49 L110,49 C115,49 118,52 119,56 L72,56 C70,54 70,51 71,49 L75,37 C77,30 83,26 93,26 Z"
+        fill="#facc15"/>
+  <polygon points="82,29 115,29 112,34 79,34" fill="#fef9c3" opacity="0.9"/>
+
+  <!-- Crisp spark highlights -->
+  <polygon points="62,48 68,44 65,51 71,54 64,55 61,61 59,54 53,51 60,50" fill="#ffffff"/>
+  <circle cx="24" cy="84" r="2.2" fill="#fef08a"/>
+  <circle cx="122" cy="18" r="2.4" fill="#fef08a"/>
+</svg>

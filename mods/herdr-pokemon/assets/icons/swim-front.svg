@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 22">
+  <!-- Rich translucent lower water-surface meniscus seamlessly masking the submerged lower body -->
+  <path d="M4,11.5 Q12,9.2 19,11.5 Q24,13.4 29,11.5 Q36,9.2 44,11.5 Q43,18.2 24,19.4 Q5,18.2 4,11.5 Z"
+        fill="#0284c7" opacity="0.46"/>
+  <path d="M7,12.2 Q15,10.8 24,12.2 Q33,10.8 41,12.2 Q39,17.0 24,17.8 Q9,17.0 7,12.2 Z"
+        fill="#38bdf8" opacity="0.44"/>
+  <!-- Crisp pixel-style white foam collar right along the waterline -->
+  <path d="M6.5,11.2 Q11.5,8.2 16.5,10.8 Q20.5,12.6 24,10.0 Q27.5,12.6 31.5,10.8 Q36.5,8.2 41.5,11.2"
+        fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.96"/>
+  <!-- Secondary shimmering ripple arc underneath foam -->
+  <path d="M10.5,15.2 Q17.5,17.4 24,16.4 Q30.5,17.4 37.5,15.2"
+        fill="none" stroke="#e0f2fe" stroke-width="1.4" stroke-linecap="round" opacity="0.90"/>
+  <!-- Lively pixel water splash droplets kicking up on left & right sides! -->
+  <rect x="3.5" y="6" width="2.6" height="2.6" rx="1" fill="#ffffff" opacity="0.95"/>
+  <rect x="7.8" y="3.2" width="2.2" height="2.8" rx="0.9" fill="#e0f2fe" opacity="0.90"/>
+  <rect x="41.8" y="6" width="2.6" height="2.6" rx="1" fill="#ffffff" opacity="0.95"/>
+  <rect x="38" y="3.2" width="2.2" height="2.8" rx="0.9" fill="#e0f2fe" opacity="0.90"/>
+  <rect x="14.5" y="6.8" width="2" height="1.8" rx="0.8" fill="#ffffff" opacity="0.88"/>
+  <rect x="31.5" y="6.8" width="2" height="1.8" rx="0.8" fill="#ffffff" opacity="0.88"/>
+</svg>
