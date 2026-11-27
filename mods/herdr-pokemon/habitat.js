@@ -7,9 +7,9 @@
 
 import { div, image, svg } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { agents, terminals, spaces, settings, run, shared, setShared, playSound, notify, checking } from "herdr";
+import { agents, terminals, spaces, settings, run, shared, setShared, playSound, notify, layout, window as herdrWindow, checking } from "herdr";
 import {
-  palette, alpha, applyUiFont, applyBadgeFont, isZh, tr,
+  palette, alpha, applyUiFont, applyBadgeFont, isZh, tr, findNode, isEcoFx,
   BIOME_KEY, BIOME_INTERVAL_KEY, WEATHER_KEY, WEATHER_INTERVAL_KEY, TIME_KEY, HABITAT_RELEASE_KEY, HABITAT_RECALL_KEY,
   iconAsset, mapAsset, mapFgAsset, fxAsset, fxGifAsset, ballAsset, openPokePicker, openHabitatPrefs,
 } from "./kit.js";
@@ -150,6 +150,7 @@ export default class Habitat {
     this.lastBiomeId = null;
     this.lastBiomeRotateAt = Date.now();
     this.lastTickAt = Date.now();
+    this.lastBgCheckAt = 0;
     this.lastXpFlush = Date.now();
     this.xpBuf = {};     // { [slot]: { xp, total, turns, dirty } }
     this.workStart = {}; // { [address]: timestamp }
@@ -169,7 +170,20 @@ export default class Habitat {
       this.lastReleaseSeen = initRel;
       this.triggerRelease(cx, true);
     }
-    cx.timer.every(240, (cx) => this.tick(cx));
+    cx.timer.every(350, (cx) => this.tick(cx));
+  }
+
+  isHabitatHidden() {
+    return Boolean(findNode(layout(), "pokemon-habitat")?.hidden);
+  }
+
+  isWindowVisible() {
+    return herdrWindow()?.visible !== false;
+  }
+
+  isWindowActive() {
+    const w = herdrWindow();
+    return !w || (w.visible !== false && w.active !== false);
   }
 
   bounds() {
@@ -350,12 +364,13 @@ export default class Habitat {
     });
   }
 
-  makeSocialEnv(biomeId, mapBox, b, list) {
+  makeSocialEnv(biomeId, mapBox, b, list, eco = isEcoFx()) {
     const pickTargetFor = (dexId, cx0, cy0, opts) =>
       pickTerrainTarget(biomeId, habitatOf(dexId), cx0, cy0, mapBox, b, opts);
     return {
       biomeId,
       mapBox,
+      eco,
       sprites: this.sprites,
       pickTarget: pickTargetFor,
       onBattleXp: (winAddr, loseAddr, isEpic) => {
@@ -524,45 +539,16 @@ export default class Habitat {
     cx.notify();
   }
 
-  tick(cx) {
-    if (this.battle) return; // Pause overworld roaming while inline battle is open (zero wasted CPU!)
-    const now = Date.now();
-    // Hold-to-grab: holding left mouse button on a Pokemon for >= 200ms lifts it up even before moving!
-    if (this.drag && !this.drag.active && now - this.drag.downAt >= 200) {
-      this.activateGrab(cx);
-    }
-    const list = agents();
-    const tabs = tabsById();
-    const { ids, fresh } = assignPokemon(list);
-    if (Object.keys(fresh).length) savePicks(fresh);
-
-    const set = crySetOf(shared(CRY_KEY));
-    const neededIcons = [];
-    for (const a of list) {
-      const id = ids[a.address];
-      const shiny = isShiny(slotOf(a));
-      neededIcons.push(id);
-      this.wantSprite(id, shiny, cx);
-      this.wantPortraits(id, shiny, cx);
-      this.wantCry(id, set, cx);
-    }
-
-    const b = this.bounds();
-    const biomeId = biomeOf(shared(BIOME_KEY)).id;
-    const mapBox = computeMapBox(this.width, this.height);
-    const dtSec = clamp((now - (this.lastTickAt || now)) / 1000, 0, 2.5);
-    this.lastTickAt = now;
-    const socialEnv = this.makeSocialEnv(biomeId, mapBox, b, list);
-    const pickTargetFor = socialEnv.pickTarget;
-    let changed = false;
+  updateAgentAlertsAndXp(list, ids, set, now, dtSec, cx) {
     let flushXpNow = false;
+    const doneAddrs = [];
     const live = new Set();
 
-    list.forEach((a) => {
+    for (const a of list) {
       live.add(a.address);
       const slot = slotOf(a);
       const dexId = ids[a.address];
-      const hab = habitatOf(dexId);
+      this.wantCry(dexId, set, cx);
       const was = this.seen[a.address];
       this.seen[a.address] = a.status;
 
@@ -597,10 +583,150 @@ export default class Habitat {
         delete this.workStart[a.address];
       }
 
+      if (was !== undefined && was !== a.status) {
+        if (a.status === "blocked" || a.status === "done") {
+          const sound = this.cries[`${set}:${dexId}`];
+          const path = a.status === "blocked" ? sound?.cry : sound?.chirp;
+          if (path && now - this.cried >= CRY_GAP) { playSound(path); this.cried = now; }
+        }
+        // Guarantee top-right Poke Ball confirmation toast fires whenever an agent becomes blocked
+        // (Herdr suppresses its built-in toast when the tab is focused; we wait 260ms & dedupe!).
+        if (a.status === "blocked") {
+          const spaceLabel = a.space_name || a.tab_name || "Agent";
+          const progLabel = a.program?.name || "Agent";
+          const bodyText = a.tab_name ? `${spaceLabel} / ${a.tab_name}` : spaceLabel;
+          const act = a.pane
+            ? { name: "pane.focus", args: { pane: a.pane } }
+            : { name: "agent.focus", args: { terminal: a.address } };
+          cx.timer.after(260, () => {
+            const last = shared(LAST_TOAST_KEY);
+            const recent = last && last.key === `alert:${spaceLabel}` && (Date.now() - Number(last.at || 0)) < 2500;
+            if (!recent) {
+              notify({
+                title: `${progLabel} needs you`,
+                body: bodyText,
+                level: "warning",
+                timeout: 6000,
+                action: act,
+              });
+            }
+          });
+        }
+        if (a.status === "done") doneAddrs.push(a.address);
+      }
+    }
+
+    // Periodically persist dirty Work-XP to shared storage (~every 60s or immediately on turn complete)
+    if (flushXpNow || now - this.lastXpFlush >= 60000) {
+      const updates = {};
+      let any = false;
+      for (const [slot, rec] of Object.entries(this.xpBuf)) {
+        if (!rec.dirty) continue;
+        updates[slot] = { xp: Math.round(rec.xp), total: Math.round(rec.total), turns: rec.turns };
+        rec.dirty = false;
+        any = true;
+      }
+      if (any) {
+        saveXpBatch(updates);
+        this.lastXpFlush = now;
+      }
+    }
+
+    for (const k of Object.keys(this.seen)) if (!live.has(k)) delete this.seen[k];
+    return { live, doneAddrs };
+  }
+
+  settleFinishedWalks(now) {
+    let settled = false;
+    for (const m of Object.values(this.mons)) {
+      if (m.moving && now >= m.start + m.dur) {
+        m.moving = false;
+        m.x = m.targetX;
+        m.y = m.targetY;
+        m.waypoints = [];
+        settled = true;
+      }
+      if (m.anim && now >= m.animUntil) { m.anim = null; settled = true; }
+      if (m.emote && now >= m.emoteUntil) { m.emote = null; settled = true; }
+    }
+    for (const sm of Object.values(this.subMons)) {
+      if (sm.moving && now >= sm.start + sm.dur) {
+        sm.moving = false;
+        sm.x = sm.targetX;
+        sm.y = sm.targetY;
+        settled = true;
+      }
+    }
+    return settled;
+  }
+
+  tick(cx) {
+    if (this.battle) return; // Pause overworld roaming while inline battle is open (zero wasted CPU!)
+    const now = Date.now();
+    const habHidden = this.isHabitatHidden();
+    const winVis = this.isWindowVisible();
+    const winActive = this.isWindowActive();
+
+    // Hold-to-grab: holding left mouse button on a Pokemon for >= 200ms lifts it up even before moving!
+    if (winActive && !habHidden && this.drag && !this.drag.active && now - this.drag.downAt >= 200) {
+      this.activateGrab(cx);
+    }
+
+    if (habHidden || !winVis || !winActive) {
+      if (now - this.lastBgCheckAt < 1000) return;
+      this.lastBgCheckAt = now;
+    }
+
+    const list = agents();
+    const { ids, fresh } = assignPokemon(list);
+    if (Object.keys(fresh).length) savePicks(fresh);
+
+    const set = crySetOf(shared(CRY_KEY));
+    const dtSec = clamp((now - (this.lastTickAt || now)) / 1000, 0, 2.5);
+    this.lastTickAt = now;
+    const { live, doneAddrs } = this.updateAgentAlertsAndXp(list, ids, set, now, dtSec, cx);
+
+    if (habHidden || !winVis) {
+      this.settleFinishedWalks(now);
+      for (const k of Object.keys(this.mons)) if (!live.has(k)) delete this.mons[k];
+      return;
+    }
+
+    if (!winActive) {
+      let changedBg = this.settleFinishedWalks(now);
+      for (const k of Object.keys(this.mons)) if (!live.has(k)) { delete this.mons[k]; changedBg = true; }
+      if (changedBg) cx.notify();
+      return;
+    }
+
+    const tabs = tabsById();
+    const neededIcons = [];
+    for (const a of list) {
+      const id = ids[a.address];
+      const shiny = isShiny(slotOf(a));
+      neededIcons.push(id);
+      this.wantSprite(id, shiny, cx);
+      this.wantPortraits(id, shiny, cx);
+    }
+
+    const b = this.bounds();
+    const biomeId = biomeOf(shared(BIOME_KEY)).id;
+    const mapBox = computeMapBox(this.width, this.height);
+    const eco = isEcoFx();
+    const socialEnv = this.makeSocialEnv(biomeId, mapBox, b, list, eco);
+    const pickTargetFor = socialEnv.pickTarget;
+    let changed = false;
+
+    list.forEach((a) => {
+      const slot = slotOf(a);
+      const dexId = ids[a.address];
+      const hab = habitatOf(dexId);
+      const xpRec = this.xpBuf[slot];
+
       // Check automatic seamless evolution when stage XP threshold is reached (unless locked)!
       const shiny = isShiny(slot);
       const evo = isEvoLocked(slot) ? null : nextEvolution(dexId, slot);
-      if (evo && xpRec.xp >= evo.needXp) {
+      if (evo && xpRec && xpRec.xp >= evo.needXp) {
         if (!this.evolving[slot] || this.evolving[slot].fromId !== dexId) {
           this.evolving[slot] = { fromId: dexId, nextId: evo.nextId };
           // Silently preload evolved sprites, portraits & cry so the transformation has zero flicker!
@@ -642,39 +768,9 @@ export default class Habitat {
         }
       }
 
-      if (was !== undefined && was !== a.status) {
-        if (a.status === "blocked" || a.status === "done") {
-          const sound = this.cries[`${set}:${dexId}`];
-          const path = a.status === "blocked" ? sound?.cry : sound?.chirp;
-          if (path && now - this.cried >= CRY_GAP) { playSound(path); this.cried = now; }
-        }
-        // Guarantee top-right Poke Ball confirmation toast fires whenever an agent becomes blocked
-        // (Herdr suppresses its built-in toast when the tab is focused; we wait 260ms & dedupe!).
-        if (a.status === "blocked") {
-          const spaceLabel = a.space_name || a.tab_name || "Agent";
-          const progLabel = a.program?.name || "Agent";
-          const bodyText = a.tab_name ? `${spaceLabel} / ${a.tab_name}` : spaceLabel;
-          const act = a.pane
-            ? { name: "pane.focus", args: { pane: a.pane } }
-            : { name: "agent.focus", args: { terminal: a.address } };
-          cx.timer.after(260, () => {
-            const last = shared(LAST_TOAST_KEY);
-            const recent = last && last.key === `alert:${spaceLabel}` && (Date.now() - Number(last.at || 0)) < 2500;
-            if (!recent) {
-              notify({
-                title: `${progLabel} needs you`,
-                body: bodyText,
-                level: "warning",
-                timeout: 6000,
-                action: act,
-              });
-            }
-          });
-        }
-        if (a.status === "done") {
-          this.engine.onAgentDone(a.address, list, this.mons, ids, now, b, socialEnv);
-          changed = true;
-        }
+      if (doneAddrs.includes(a.address)) {
+        this.engine.onAgentDone(a.address, list, this.mons, ids, now, b, socialEnv);
+        changed = true;
       }
 
       let m = this.mons[a.address];
@@ -784,13 +880,13 @@ export default class Habitat {
                 m.pauseUntil = now + rand(3600, 7600);
               } else {
                 m.perchRest = false;
-                m.pauseUntil = now + rand(700, 1800);
+                m.pauseUntil = now + (eco ? rand(2400, 5000) : rand(900, 2000));
               }
             } else if (hab.canFly && endTerr === "water") {
               // Hover briefly over water, then keep flying (never rest on water!)
               m.airborne = true;
               m.perchRest = false;
-              m.pauseUntil = now + rand(650, 1500);
+              m.pauseUntil = now + (eco ? rand(2000, 4200) : rand(800, 1800));
             } else if (hab.canBurrow && endSoil && (mood === "working" || mood === "idle")) {
               // Ground/Rock Pokemon occasionally burrow halfway underground when pausing on soil!
               const chance = hab.deepBurrow ? 0.65 : 0.36;
@@ -800,11 +896,11 @@ export default class Habitat {
                 m.pauseUntil = m.burrowUntil;
               } else {
                 m.burrowed = false;
-                m.pauseUntil = now + (mood === "working" ? rand(450, 1800) : rand(2600, 7500));
+                m.pauseUntil = now + (mood === "working" ? (eco ? rand(3500, 7500) : rand(1200, 2800)) : (eco ? rand(7000, 14000) : rand(3500, 8500)));
               }
             } else {
               m.burrowed = false;
-              m.pauseUntil = now + (mood === "working" ? rand(450, 1800) : rand(2600, 7500));
+              m.pauseUntil = now + (mood === "working" ? (eco ? rand(3500, 7500) : rand(1200, 2800)) : (eco ? rand(7000, 14000) : rand(3500, 8500)));
             }
           }
           changed = true;
@@ -844,7 +940,7 @@ export default class Habitat {
           walkPath2D(m, pt.path ?? [{ x: pt.x, y: pt.y }], spd, now, b);
           changed = true;
         } else {
-          m.pauseUntil = now + rand(900, 2400);
+          m.pauseUntil = now + (eco ? rand(2500, 5000) : rand(1200, 2600));
         }
       }
       // If biome switched and a land-bound Pokemon ended up over water, immediately rescue it onto the nearest dry shore
@@ -871,24 +967,7 @@ export default class Habitat {
       }
     });
 
-    // Periodically persist dirty Work-XP to shared storage (~every 10s or immediately on turn complete)
-    if (flushXpNow || now - this.lastXpFlush >= 10000) {
-      const updates = {};
-      let any = false;
-      for (const [slot, rec] of Object.entries(this.xpBuf)) {
-        if (!rec.dirty) continue;
-        updates[slot] = { xp: Math.round(rec.xp), total: Math.round(rec.total), turns: rec.turns };
-        rec.dirty = false;
-        any = true;
-      }
-      if (any) {
-        saveXpBatch(updates);
-        this.lastXpFlush = now;
-      }
-    }
-
     for (const k of Object.keys(this.mons)) if (!live.has(k)) { delete this.mons[k]; changed = true; }
-    for (const k of Object.keys(this.seen)) if (!live.has(k)) delete this.seen[k];
 
     // ---- Subagent Mini-Follower Entourage (0.65x cute base-form helpers trailing behind parent!) ----
     const allTerms = terminals();
@@ -954,7 +1033,7 @@ export default class Habitat {
             sm.y = sm.targetY;
             changed = true;
           }
-          if (Math.hypot(tx - sPos.x, ty - sPos.y) > 13) {
+          if (Math.hypot(tx - sPos.x, ty - sPos.y) > 18) {
             walkTo2D(sm, tx, ty, 94, now, b);
             changed = true;
           } else if (!sm.moving && sm.dir !== d) {
@@ -1021,10 +1100,91 @@ export default class Habitat {
     return null;
   }
 
-  renderWeather(weather, w, h) {
+  renderWeather(weather, w, h, animateAmbient) {
     if (!weather) return [];
     const items = [];
-    const n = Math.min(22, Math.max(9, Math.floor(w / 62)));
+    if (!animateAmbient) {
+      if (weather === "sunny") {
+        items.push(div().absolute().left(0).top(0).w(Math.round(w * 0.45)).h(h).bg("#fef9c3").opacity(0.08));
+        for (let i = 0; i < 5; i++) {
+          const x = Math.round(((i + 0.5) / 5) * w);
+          const y0 = 28 + (i * 37) % Math.max(30, h - 46);
+          items.push(div().absolute().left(x).top(y0).size(3).rounded_full().bg("#fef08a").opacity(0.42));
+        }
+        return items;
+      }
+      if (weather === "breeze") {
+        for (let i = 0; i < 7; i++) {
+          const x0 = Math.round(((i + 0.4) / 7) * w);
+          const y0 = 18 + (i * 31) % Math.max(24, h - 32);
+          items.push(div().absolute().left(x0).top(y0).w(6).h(3).rounded(2).bg(i % 3 === 0 ? "#86efac" : i % 3 === 1 ? "#4ade80" : "#fde047").opacity(0.65));
+        }
+        return items;
+      }
+      if (weather === "rainbow") {
+        const bands = ["#fca5a5", "#fdba74", "#fde047", "#86efac", "#93c5fd", "#c4b5fd"];
+        const arcW = Math.round(w * 0.56);
+        bands.forEach((col, bi) => {
+          const d = arcW - bi * 10;
+          items.push(div().absolute().left(Math.round((w - d) / 2)).top(18 + bi * 5).w(d).h(d).rounded_full().border(3).border_color(col).opacity(0.22));
+        });
+        for (let i = 0; i < 6; i++) {
+          const x = Math.round(((i + 0.5) / 6) * w);
+          const y0 = 24 + (i * 29) % Math.max(24, h - 38);
+          items.push(div().absolute().left(x).top(y0).size(3).rounded_full().bg("#ffffff").opacity(0.55));
+        }
+        return items;
+      }
+      if (weather === "storm") {
+        items.push(div().absolute().inset_0().bg("#0f172a").opacity(0.14));
+        for (let i = 0; i < 10; i++) {
+          const x = Math.round(((i + 0.4) / 10) * w);
+          const y = 14 + (i * 39) % Math.max(24, h - 34);
+          items.push(div().absolute().left(x).top(y).w(1.5).h(12).bg("#93c5fd").opacity(0.42));
+        }
+        return items;
+      }
+      if (weather === "fireflies") {
+        for (let i = 0; i < 8; i++) {
+          const x = Math.round(((i + 0.5) / 8) * w);
+          const y0 = 22 + (i * 37) % Math.max(30, h - 42);
+          items.push(div().absolute().left(x).top(y0).size(3.5).rounded_full().bg("#fef08a").opacity(0.68));
+        }
+        return items;
+      }
+      if (weather === "petals") {
+        for (let i = 0; i < 8; i++) {
+          const x = Math.round(((i + 0.4) / 8) * w);
+          const y = 16 + (i * 33) % Math.max(24, h - 34);
+          items.push(div().absolute().left(x).top(y).w(5).h(3.5).rounded(2).bg(i % 2 ? "#f9a8d4" : "#fbcfe8").opacity(0.75));
+        }
+        return items;
+      }
+      if (weather === "drizzle") {
+        for (let i = 0; i < 8; i++) {
+          const x = Math.round(((i + 0.5) / 8) * w);
+          const y = 14 + (i * 35) % Math.max(24, h - 34);
+          items.push(div().absolute().left(x).top(y).w(1.5).h(10).bg("#bae6fd").opacity(0.45));
+          if (i % 3 === 0) {
+            const ry = Math.round(h * 0.45 + (i * 19) % Math.max(16, h * 0.45));
+            items.push(div().absolute().left(x - 4).top(ry).w(10).h(4).rounded_full().border_1().border_color("#e0f2fe").opacity(0.4));
+          }
+        }
+        return items;
+      }
+      if (weather === "snow") {
+        for (let i = 0; i < 10; i++) {
+          const x = Math.round(((i + 0.5) / 10) * w);
+          const y = 16 + (i * 29) % Math.max(24, h - 32);
+          const sz = i % 3 === 0 ? 4 : 2.5;
+          items.push(div().absolute().left(x).top(y).size(sz).rounded_full().bg("#ffffff").opacity(0.7));
+        }
+        return items;
+      }
+      return items;
+    }
+
+    const n = Math.min(10, Math.max(6, Math.floor(w / 140)));
 
     if (weather === "sunny") {
       // Soft golden floating sun motes + warm top-left sunbeam glow
@@ -1032,8 +1192,8 @@ export default class Habitat {
         div().absolute().left(0).top(0).w(Math.round(w * 0.45)).h(h).bg("#fef9c3").opacity(0.08)
           .loop("opacity", { from: 0.04, to: 0.11, period: 5200 }),
       );
-      for (let i = 0; i < Math.min(10, n); i++) {
-        const x = Math.round(((i + 0.4) / 10) * w);
+      for (let i = 0; i < Math.min(8, n); i++) {
+        const x = Math.round(((i + 0.4) / Math.min(8, n)) * w);
         const y0 = 26 + (i * 31) % Math.max(30, h - 44);
         items.push(
           div().absolute().left(x).top(y0).size(3).rounded_full().bg("#fef08a")
@@ -1072,8 +1232,8 @@ export default class Habitat {
             .rounded_full().border(3).border_color(col).opacity(0.24),
         );
       });
-      for (let i = 0; i < 12; i++) {
-        const x = Math.round(((i + 0.5) / 12) * w);
+      for (let i = 0; i < 8; i++) {
+        const x = Math.round(((i + 0.5) / 8) * w);
         const y0 = 20 + (i * 27) % Math.max(24, h - 36);
         items.push(
           div().absolute().left(x).top(y0).size(3.5).rounded_full().bg("#ffffff")
@@ -1084,14 +1244,14 @@ export default class Habitat {
     }
 
     if (weather === "storm") {
-      // Cool mist + dense rain + occasional soft ambient lightning shimmer
+      // Cool mist + rain + occasional soft ambient lightning shimmer
       items.push(div().absolute().inset_0().bg("#0f172a").opacity(0.14));
       items.push(
         div().absolute().inset_0().bg("#e0f2fe").opacity(0)
           .loop("opacity", { from: 0.0, to: 0.16, period: 6400 }),
       );
-      for (let i = 0; i < n + 8; i++) {
-        const x = Math.round(((i + 0.3) / (n + 8)) * w);
+      for (let i = 0; i < n + 2; i++) {
+        const x = Math.round(((i + 0.3) / (n + 2)) * w);
         const per = 520 + (i % 4) * 110;
         items.push(
           div().absolute().left(x).top(-16).w(1.5).h(15).bg("#93c5fd")
@@ -1148,6 +1308,9 @@ export default class Habitat {
   }
 
   render(cx) {
+    if (this.isHabitatHidden() && !this.ballAnim) return div();
+    const winActive = this.isWindowActive();
+    const animateAmbient = !isEcoFx() && winActive && !this.ballAnim;
     const p = palette();
     const wrapDock = (inner) =>
       applyUiFont(
@@ -1237,11 +1400,14 @@ export default class Habitat {
         .w(cardCollapsed ? 24 : cardW)
         .h(cardCollapsed ? 16 : cardH)
         .opacity(cardCollapsed ? (ba?.mode === "release" ? 0.25 : 0.1) : 1)
-        .transition("left", { duration: cardDur, easing: cardEase })
-        .transition("top", { duration: cardDur, easing: cardEase })
-        .transition("width", { duration: cardDur, easing: cardEase })
-        .transition("height", { duration: cardDur, easing: cardEase })
-        .transition("opacity", { duration: cardDur, easing: cardEase })
+        .when(Boolean(ba), (el) =>
+          el
+            .transition("left", { duration: cardDur, easing: cardEase })
+            .transition("top", { duration: cardDur, easing: cardEase })
+            .transition("width", { duration: cardDur, easing: cardEase })
+            .transition("height", { duration: cardDur, easing: cardEase })
+            .transition("opacity", { duration: cardDur, easing: cardEase }),
+        )
         .rounded(10)
         .overflow_hidden()
         .bg(p.canvas)
@@ -1291,16 +1457,18 @@ export default class Habitat {
         .top(cardCollapsed ? 0 : mapBox.top)
         .w(cardCollapsed ? 24 : mapBox.drawW)
         .h(cardCollapsed ? 16 : mapBox.drawH)
-        .transition("left", { duration: cardDur, easing: cardEase })
-        .transition("top", { duration: cardDur, easing: cardEase })
-        .transition("width", { duration: cardDur, easing: cardEase })
-        .transition("height", { duration: cardDur, easing: cardEase }),
+        .when(Boolean(ba), (el) =>
+          el
+            .transition("left", { duration: cardDur, easing: cardEase })
+            .transition("top", { duration: cardDur, easing: cardEase })
+            .transition("width", { duration: cardDur, easing: cardEase })
+            .transition("height", { duration: cardDur, easing: cardEase }),
+        ),
     );
 
-    // 2. Biome-accurate animated lake wave shimmers & cascading waterfall streaks (native GPU loops!)
-    waterSparkleCoords(biome.id, mapBox).forEach((sp, i) => {
+    // 2. Biome-accurate lake wave shimmers & cascading waterfall streaks
+    waterSparkleCoords(biome.id, mapBox).slice(0, 5).forEach((sp, i) => {
       const lx = Math.round(sp.x - sp.w / 2);
-      const drift = i % 2 === 0 ? 5 : -5;
       const per = 1800 + (i % 5) * 420;
       root.child(
         div()
@@ -1311,26 +1479,29 @@ export default class Habitat {
           .h(2)
           .rounded(1)
           .bg(i % 3 === 0 ? "#ffffff" : "#e0f2fe")
-          .loop("left", { from: lx - drift, to: lx + drift, period: per + 900 })
-          .loop("opacity", { from: 0.12, to: 0.78, period: per }),
+          .when(animateAmbient, (el) => el.loop("opacity", { from: 0.16, to: 0.78, period: per }))
+          .when(!animateAmbient, (el) => el.opacity(0.42)),
       );
     });
     const wf = waterfallCoords(biome.id, mapBox);
     if (wf) {
-      for (let i = 0; i < 6; i++) {
-        const sx = Math.round(wf.x + ((i + 0.5) / 6) * wf.w);
+      for (let i = 0; i < 4; i++) {
+        const sx = Math.round(wf.x + ((i + 0.5) / 4) * wf.w);
         const per = 620 + (i % 3) * 140;
+        const staticTop = Math.round(wf.y + ((i % 3) / 3) * Math.max(4, wf.h - 12));
         root.child(
           div()
             .absolute()
             .left(sx)
-            .top(Math.round(wf.y))
+            .top(animateAmbient ? Math.round(wf.y) : staticTop)
             .w(2.5)
             .h(12)
             .rounded(2)
             .bg(i % 2 === 0 ? "#ffffff" : "#bae6fd")
-            .loop("top", { from: Math.round(wf.y), to: Math.round(wf.y + wf.h - 10), period: per })
-            .loop("opacity", { from: 0.85, to: 0.2, period: per }),
+            .when(animateAmbient, (el) =>
+              el.loop("top", { from: Math.round(wf.y), to: Math.round(wf.y + wf.h - 10), period: per }),
+            )
+            .when(!animateAmbient, (el) => el.opacity(0.55)),
         );
       }
       root.child(
@@ -1342,7 +1513,8 @@ export default class Habitat {
           .h(10)
           .rounded_full()
           .bg("#e0f7ff")
-          .loop("opacity", { from: 0.25, to: 0.72, period: 1100 }),
+          .when(animateAmbient, (el) => el.loop("opacity", { from: 0.25, to: 0.72, period: 1100 }))
+          .when(!animateAmbient, (el) => el.opacity(0.42)),
       );
     }
 
@@ -1423,7 +1595,8 @@ export default class Habitat {
             .top(seamY - Math.round(collarH * 0.55))
             .w(collarW)
             .h(collarH)
-            .loop("opacity", { from: 0.65, to: 1.0, period: 1200 })
+            .when(animateAmbient, (el) => el.loop("opacity", { from: 0.65, to: 1.0, period: 1200 }))
+            .when(!animateAmbient, (el) => el.opacity(0.85))
             .child(image(iconAsset("swim-back")).w(collarW).h(collarH))
         : (!grabbed && burrowed)
           ? div()
@@ -1454,9 +1627,9 @@ export default class Habitat {
             .loop("left", { from: left + clip - 2.5, to: left + clip + 2.5, period: 165 })
             .loop("top", { from: clipTop - 1.5, to: clipTop + 2, period: 220 }),
         )
-        .when(!grabbed && isAirborne, (el) => el.loop("top", { from: clipTop - 2, to: clipTop + 2, period: 1050 }))
-        .when(!grabbed && swimming, (el) => el.loop("top", { from: clipTop - 1, to: clipTop + 1.5, period: 1150 }))
-        .when(!grabbed && burrowed && moving, (el) => el.loop("top", { from: clipTop - 1, to: clipTop + 1, period: 260 }))
+        .when(animateAmbient && !grabbed && isAirborne, (el) => el.loop("top", { from: clipTop - 2, to: clipTop + 2, period: 1050 }))
+        .when(animateAmbient && !grabbed && swimming, (el) => el.loop("top", { from: clipTop - 1, to: clipTop + 1.5, period: 1150 }))
+        .when(animateAmbient && !grabbed && burrowed && moving, (el) => el.loop("top", { from: clipTop - 1, to: clipTop + 1, period: 260 }))
         .child(image(s.path).absolute().left(-clip).top(-clip).w(sw).h(sh));
 
       const bodyEl = div()
@@ -1486,7 +1659,8 @@ export default class Habitat {
               .text_size(11)
               .font_bold()
               .text_color("#facc15")
-              .loop("opacity", { from: 0.0, to: 0.95, period: 2400 })
+              .when(animateAmbient, (x) => x.loop("opacity", { from: 0.0, to: 0.95, period: 2400 }))
+              .when(!animateAmbient, (x) => x.opacity(0.85))
               .child("✦"),
           ),
         )
@@ -1498,11 +1672,13 @@ export default class Habitat {
               .top(seamY - Math.round(collarH * 0.56))
               .w(collarW)
               .h(collarH)
-              .loop("top", {
-                from: seamY - Math.round(collarH * 0.56),
-                to: seamY - Math.round(collarH * 0.56) + 1.5,
-                period: 950,
-              })
+              .when(animateAmbient, (x) =>
+                x.loop("top", {
+                  from: seamY - Math.round(collarH * 0.56),
+                  to: seamY - Math.round(collarH * 0.56) + 1.5,
+                  period: 950,
+                }),
+              )
               .child(image(iconAsset("swim-front")).w(collarW).h(collarH)),
           ),
         )
@@ -1514,7 +1690,7 @@ export default class Habitat {
               .top(seamY - Math.round(collarH * 0.54))
               .w(collarW)
               .h(collarH)
-              .when(moving, (x) => x.loop("top", { from: seamY - Math.round(collarH * 0.54), to: seamY - Math.round(collarH * 0.54) + 1.2, period: 240 }))
+              .when(animateAmbient && moving, (x) => x.loop("top", { from: seamY - Math.round(collarH * 0.54), to: seamY - Math.round(collarH * 0.54) + 1.2, period: 240 }))
               .child(image(iconAsset("burrow-front")).w(collarW).h(collarH)),
           ),
         );
@@ -1574,7 +1750,7 @@ export default class Habitat {
         spriteH = 22;
         body = div()
           .absolute().left(SLOT / 2 - 11).top(FOOT_Y - 22 + (grabbed ? -28 : 0)).size(22)
-          .loop("opacity", { from: 0.45, to: 1, period: 1100 })
+          .opacity(0.75)
           .child(image(ballAsset("poke", false)).size(22));
       }
 
@@ -1584,10 +1760,12 @@ export default class Habitat {
         hasLockOn ? div().px(6).py(0.5).rounded(5).bg("#2563eb").border_1().border_color("#93c5fd").text_color("#ffffff").font_bold().text_size(9.5).child(tr("我方", "YOU"))
         : grabbed ? div().px(5).rounded(5).bg("#0ea5e9").text_color("#ffffff").font_bold().text_size(10).child("!?").loop("opacity", { from: 0.65, to: 1, period: 360 })
         : isDragTarget ? div().px(6).py(0.5).rounded(5).bg("#dc2626").border_1().border_color("#fca5a5").text_color("#ffffff").font_bold().text_size(9.5).child(tr("对手", "FOE"))
-        : mood === "blocked" ? div().px(6).rounded(5).bg("#dc2626").text_color("#ffffff").font_bold().text_size(11).child("!").loop("opacity", { from: 0.6, to: 1, period: 750 })
+        : mood === "blocked" ? div().px(6).rounded(5).bg("#dc2626").text_color("#ffffff").font_bold().text_size(11).child("!").when(animateAmbient, (el) => el.loop("opacity", { from: 0.6, to: 1, period: 750 }))
         : m.emote ? this.renderEmote(m.emote)
         : mood === "done" ? div().px(6).rounded(5).bg("#16a34a").text_color("#ffffff").font_bold().text_size(11).child("✓")
-        : mood === "sleep" ? div().text_color("#ffffff").font_bold().text_size(11).frames(["z", "zZ", "zZz", "zZ"], 700)
+        : mood === "sleep" ? (winActive
+            ? div().text_color("#ffffff").font_bold().text_size(11).frames(["z", "zZ", "zZz", "zZ"], 1100)
+            : div().text_color("#ffffff").font_bold().text_size(11).child("zZz"))
         : null;
 
       const headY = FOOT_Y - spriteH + headShiftY;
@@ -1650,13 +1828,15 @@ export default class Habitat {
         .left(renderX - SLOT / 2)
         .top(renderY - FOOT_Y)
         .opacity(monOpacity)
-        .transition("opacity", { duration: isSuckedIn ? 260 : 280, easing: moveEase })
-        .when(!grabbed, (el) =>
+        .when(Boolean(ba), (el) =>
+          el.transition("opacity", { duration: isSuckedIn ? 260 : 280, easing: moveEase }),
+        )
+        .when(!grabbed && (m.moving || isSuckedIn || isJustReleased), (el) =>
           el
             .transition("left", { duration: moveDur, easing: moveEase })
-            .transition("top", { duration: moveDur, easing: moveEase })
-            .cursor_grab(),
+            .transition("top", { duration: moveDur, easing: moveEase }),
         )
+        .when(!grabbed, (el) => el.cursor_grab())
         .when(grabbed, (el) => el.cursor_grabbing())
         .on_hover((h, cx) => {
           const next = h ? a.address : this.hover === a.address ? null : this.hover;
@@ -1752,8 +1932,11 @@ export default class Habitat {
         .h(SLOT_H)
         .left(drawX - SLOT / 2)
         .top(drawY - FOOT_Y)
-        .transition("left", { duration: dur, easing: "linear" })
-        .transition("top", { duration: dur, easing: "linear" })
+        .when(Boolean(sm.moving), (el) =>
+          el
+            .transition("left", { duration: dur, easing: "linear" })
+            .transition("top", { duration: dur, easing: "linear" }),
+        )
         .cursor_pointer()
         .tooltip(tr(`${nameOf(subId)}（子代理 · ${subName}）`, `${nameOf(subId)} (Subagent · ${subName})`))
         .on_click(() => run("terminal.peek", { terminal: subAddr }))
@@ -1805,10 +1988,13 @@ export default class Habitat {
         .top(cardCollapsed ? 0 : mapBox.top)
         .w(cardCollapsed ? 24 : mapBox.drawW)
         .h(cardCollapsed ? 16 : mapBox.drawH)
-        .transition("left", { duration: cardDur, easing: cardEase })
-        .transition("top", { duration: cardDur, easing: cardEase })
-        .transition("width", { duration: cardDur, easing: cardEase })
-        .transition("height", { duration: cardDur, easing: cardEase }),
+        .when(Boolean(ba), (el) =>
+          el
+            .transition("left", { duration: cardDur, easing: cardEase })
+            .transition("top", { duration: cardDur, easing: cardEase })
+            .transition("width", { duration: cardDur, easing: cardEase })
+            .transition("height", { duration: cardDur, easing: cardEase }),
+        ),
     );
 
     for (const e of airEntries) root.child(e.render());
@@ -1885,7 +2071,7 @@ export default class Habitat {
     }
 
     // 9. Weather particles
-    root.children(this.renderWeather(weather, this.width, this.height));
+    root.children(this.renderWeather(weather, this.width, this.height, animateAmbient));
 
     // 9b. Subtle live Battle / Evolution / Celebration pill banner (top-center, auto-fades cleanly!)
     if (this.engine.banner && now < this.engine.banner.until) {

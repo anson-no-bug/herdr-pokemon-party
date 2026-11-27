@@ -2,8 +2,8 @@
 
 import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { spaces, panes, focused, exec, readTextFile, watchFolder, run, checking } from "herdr";
-import { palette, isRetro, applyUiFont, applyBadgeFont, rpgButton, iconAsset } from "./kit.js";
+import { spaces, panes, focused, exec, readTextFile, watchFolder, run, layout, window, checking } from "herdr";
+import { palette, isRetro, applyUiFont, applyBadgeFont, rpgButton, iconAsset, findNode } from "./kit.js";
 
 function location() {
   const space = spaces().find((s) => s.active), f = focused();
@@ -26,9 +26,20 @@ export default class ChangesPanel {
     this.input = InputState.new({ placeholder: "Commit message…" });
     this.input.on("change", (_e, cx) => { this.message = this.input.value(); cx.notify(); });
     this.input.on("submit", (_e, cx) => this.commit(cx));
+    this.dirty = false;
     if (checking()) return;
-    this.refresh(cx);
-    cx.timer.every(10000, (cx) => this.refresh(cx));
+    if (this.isShown()) this.refresh(cx);
+    cx.timer.every(10000, (cx) => {
+      if (!this.isShown() || window()?.active === false) return;
+      this.refresh(cx);
+    });
+  }
+
+  isShown() {
+    const root = layout();
+    const panel = findNode(root, "panel");
+    const body = findNode(root, "panel-body");
+    return Boolean(panel && !panel.hidden && body?.active === "changes");
   }
 
   current(ctx) { return this.context === ctx && key() === ctx.key; }
@@ -43,7 +54,10 @@ export default class ChangesPanel {
         while (this.context === ctx && ctx.watch === watch) {
           watch.pending = watchFolder(root);
           const paths = await watch.pending;
-          if (paths.length && ctx.watch === watch && this.current(ctx)) this.refresh(cx);
+          if (paths.length && ctx.watch === watch && this.current(ctx)) {
+            if (!this.isShown() || window()?.visible === false) this.dirty = true;
+            else this.refresh(cx);
+          }
         }
       } catch { if (ctx.watch === watch) ctx.watch = null; }
     });
@@ -122,7 +136,10 @@ export default class ChangesPanel {
   }
 
   render(cx) {
-    if (key() !== this.context?.key) this.refresh(cx);
+    if (this.isShown() && (this.dirty || key() !== this.context?.key)) {
+      this.dirty = false;
+      this.refresh(cx);
+    }
     const p = palette();
     const retro = isRetro();
 

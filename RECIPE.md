@@ -14,7 +14,7 @@ A workspace-first GBA/NDS Pokémon RPG overhaul layout for Herdr. Keeps the main
 - **Right column (`work`, non-resizable)**:
   - **Tabs** bar (`44px`, window-draggable): party tabs with Pokémon menu icons, `+ New` summon popup, Bag (Files) and VS Log (Changes) right-panel toggles.
   - **Main Work Body** (flex 1, `padding: 0`, `gap: 1`): full-bleed edge-to-edge terminal pane (`radius: 0`, `lone: false`) with a `32px` trainer-plate pane header, plus a collapsible right `panel` (`368px`) hosting Files (with 24 custom file-type icons) and Changes (git diff & commit).
-  - **Pokémon Habitat** (`232px` outer dock / `220px` inner rounded card with 4 concave SVG corner masks): 7 hand-crafted 2x pixel-art 2D maps with foreground depth occlusion (`*_fg.png`), animated water sparkles & waterfalls, 8 GPU weather particle modes, day/dusk/night veil, top-left Gear / Map / Weather icon buttons, and a top-right GBA pixel `×` recall button.
+  - **Pokémon Habitat** (`232px` outer dock / `220px` inner rounded card with 4 concave SVG corner masks): 7 hand-crafted 2x pixel-art 2D maps with foreground depth occlusion (`*_fg.png`), water sparkles & waterfalls, 8 weather modes (**Eco FX** default with zero ambient GPU `.loop()` animations, or **Full FX** native GPU particle loops in settings), day/dusk/night veil, top-left Gear / Map / Weather icon buttons, and a top-right GBA pixel `×` recall button.
   - **Status Bar** (`36px`): active space Poké Ball, region/machine name, git branch, party count + waiting badge, command palette hint, and a persistent bottom-right pixel **Master Ball** dock.
 
 ## How it behaves
@@ -63,4 +63,4 @@ A workspace-first GBA/NDS Pokémon RPG overhaul layout for Herdr. Keeps the main
 - `herdr-app do layout.switch '{"name":"herdr-pokemon"}'` renders full-bleed top terminal, left Poké Ball spaces + Party portraits, rounded bottom Pokémon Habitat card with zero square corner bleed, and bottom-right persistent Master Ball dock.
 - Dragging one Pokémon onto another opens the inline GBA battle with animated pixel FX, keyboard move selection (`WASD`/`Enter`/`1–4`/`ESC`), and token-scaled damage.
 - Clicking the habitat's top-right pixel `×` recalls Pokémon and collapses the habitat into the bottom-right Master Ball (`layout.hide`), and clicking the Master Ball releases them back out (`layout.show`).
-- Right-clicking any Pokémon opens the Pokédex Picker with working `Lock Evo`, 4-language switching (`EN`/`ZH`/`JA`/`KO` in habitat settings), and natural `1/64` Shiny rolls without a manual shiny toggle.
+- Right-clicking any Pokémon opens the Pokédex Picker with working `Lock Evo`, 4-language switching (`EN`/`ZH`/`JA`/`KO` in habitat settings), **Eco / Full FX** power toggle, and natural `1/64` Shiny rolls without a manual shiny toggle.

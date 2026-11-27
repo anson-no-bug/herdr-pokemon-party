@@ -8,7 +8,7 @@ import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { props, closeOverlay, run, shared, setShared, settings } from "herdr";
 import {
   palette, isRetro, styleMode, STYLE_KEY, BIOME_KEY, BIOME_INTERVAL_KEY, WEATHER_KEY, WEATHER_INTERVAL_KEY, TIME_KEY,
-  lang, setLang, isZh, tr, rpgFrame, rpgButton, pokeBall, iconAsset, applyBadgeFont,
+  lang, setLang, isZh, tr, fxMode, setFxMode, rpgFrame, rpgButton, pokeBall, iconAsset, applyBadgeFont,
 } from "./kit.js";
 import { BIOMES, WEATHERS, biomeIntervalMin, weatherIntervalMin } from "./habitat.js";
 
@@ -294,6 +294,14 @@ export default class Dialog {
         )
         .child(
           section(
+            tr("性能与特效", "FX & POWER", "負荷・エフェクト", "성능 및 이펙트"),
+            h_flex().gap(6).flex_wrap()
+              .child(chip("fx-eco", tr("节能模式（推荐）", "Eco (Recommended)", "省エネ（推奨）", "절전 모드 (추천)"), fxMode() === "eco", () => setFxMode("eco")))
+              .child(chip("fx-full", tr("完整动态特效", "Full FX", "フルエフェクト", "풀 이펙트"), fxMode() === "full", () => setFxMode("full"))),
+          ),
+        )
+        .child(
+          section(
             tr("主题配色", "COLOR THEME", "カラーテーマ", "컬러 테마"),
             h_flex().gap(6).flex_wrap()
               .child(chip("th-day", tr("浅色白天", "Clean Light", "ライト", "라이트"), !dark, () => run("app.theme", { name: "herdr-pokemon" })))
@@ -337,6 +345,7 @@ export default class Dialog {
     const curMapMin = biomeIntervalMin();
     const curWMin = weatherIntervalMin();
     const curLang = lang();
+    const curFx = fxMode();
 
     const seg = (id, label, active, onClick) =>
       h_flex()
@@ -437,6 +446,16 @@ export default class Dialog {
               h_flex().gap(4).children(
                 wOpts.map((o) => seg(`hp-wi-${o.v}`, o.label, curWMin === o.v, () => setShared(WEATHER_INTERVAL_KEY, o.v))),
               ),
+            ),
+        )
+        // Eco vs Full FX toggle
+        .child(
+          v_flex().gap(5)
+            .child(div().text_size(10.5).font_semibold().text_color(p.muted).child(tr("性能与特效", "FX & Power", "負荷・エフェクト", "성능 및 이펙트")))
+            .child(
+              h_flex().gap(4)
+                .child(seg("hp-fx-eco", tr("节能（推荐）", "Eco (Recommended)", "省エネ（推奨）", "절전 (추천)"), curFx === "eco", () => setFxMode("eco")))
+                .child(seg("hp-fx-full", tr("完整特效", "Full FX", "フルエフェクト", "풀 이펙트"), curFx === "full", () => setFxMode("full"))),
             ),
         ),
       { autoHeight: true },

@@ -3,8 +3,8 @@
 
 import { div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, Editor, EditorState } from "gpui-base";
-import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, settings, run, checking } from "herdr";
-import { palette, applyUiFont, fileIconAsset } from "./kit.js";
+import { spaces, panes, focused, exec, readTextFile, watchFolder, theme, settings, run, layout, window, checking } from "herdr";
+import { palette, applyUiFont, fileIconAsset, findNode } from "./kit.js";
 
 function location() {
   const space = spaces().find((s) => s.active), f = focused();
@@ -68,9 +68,20 @@ export default class FilesPanel {
     this.marks = {};
     this.file = null;
     this.editor = null;
+    this.dirty = false;
     if (checking()) return;
-    this.refresh(cx);
-    cx.timer.every(10000, (cx) => this.refresh(cx));
+    if (this.isShown()) this.refresh(cx);
+    cx.timer.every(10000, (cx) => {
+      if (!this.isShown() || window()?.active === false) return;
+      this.refresh(cx);
+    });
+  }
+
+  isShown() {
+    const root = layout();
+    const panel = findNode(root, "panel");
+    const body = findNode(root, "panel-body");
+    return Boolean(panel && !panel.hidden && body?.active === "files");
   }
 
   current(ctx) { return this.context === ctx && key() === ctx.key; }
@@ -85,7 +96,10 @@ export default class FilesPanel {
         while (this.context === ctx && ctx.watch === watch) {
           watch.pending = watchFolder(root);
           const paths = await watch.pending;
-          if (paths.length && ctx.watch === watch && this.current(ctx)) this.refresh(cx);
+          if (paths.length && ctx.watch === watch && this.current(ctx)) {
+            if (!this.isShown() || window()?.visible === false) this.dirty = true;
+            else this.refresh(cx);
+          }
         }
       } catch { if (ctx.watch === watch) ctx.watch = null; }
     });
@@ -203,7 +217,10 @@ export default class FilesPanel {
   }
 
   render(cx) {
-    if (key() !== this.context?.key) this.refresh(cx);
+    if (this.isShown() && (this.dirty || key() !== this.context?.key)) {
+      this.dirty = false;
+      this.refresh(cx);
+    }
     const p = palette();
     const rows = this.flatRows();
     const rootName = this.root ? this.root.split("/").pop() || "/" : "No folder";

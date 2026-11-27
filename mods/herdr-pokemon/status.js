@@ -115,7 +115,6 @@ export default class Status {
               div()
                 .relative()
                 .size(20)
-                .when(habHidden, (el) => el.loop("top", { from: -1, to: 1.5, period: 1350 }))
                 .child(image(iconAsset("pixel-masterball")).size(20)),
             ),
         ),

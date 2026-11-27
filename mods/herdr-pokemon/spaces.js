@@ -57,11 +57,12 @@ export default class Spaces {
     catch { this.folded = new Set(); }
     if (checking()) return;
     this.refreshMachines(cx);
-    cx.timer.every(15000, (cx) => this.refreshMachines(cx));
-    cx.timer.every(350, (cx) => this.checkNew(cx));
+    cx.timer.every(30000, (cx) => this.refreshMachines(cx));
+    cx.timer.every(1500, (cx) => this.checkNew(cx));
   }
 
   checkNew(cx) {
+    if (window()?.visible === false) return;
     const now = Date.now();
     const sp = spaces();
     for (const s of sp) if (!this.shown.has(s.id)) this.born[s.id] ??= now;
@@ -98,7 +99,7 @@ export default class Spaces {
       if (ready && this.ready[m.name] === false) for (const k of keys) if (JSON.parse(k)[0] === m.name) due.add(k);
       this.ready[m.name] = ready;
     }
-    if (window().active) {
+    if (window()?.active) {
       for (const k of keys) {
         const asks = this.git[k] || this.unsure.has(k);
         if (asks && !this.folded.has(JSON.parse(k)[0]) && now - (this.checked[k] ?? 0) > FALLBACK) due.add(k);
@@ -113,12 +114,18 @@ export default class Spaces {
   }
 
   refreshMachines(cx) {
+    if (window()?.visible === false) return;
     cx.spawn(async (cx) => {
       try {
         const r = await hc(["machine", "ls", "--json"]);
-        if (r.code === 0) this.machines = (JSON.parse(r.stdout).machines ?? []).filter((m) => !m.temporary);
+        if (r.code === 0) {
+          const next = (JSON.parse(r.stdout).machines ?? []).filter((m) => !m.temporary);
+          if (JSON.stringify(next) !== JSON.stringify(this.machines)) {
+            this.machines = next;
+            cx.notify();
+          }
+        }
       } catch {}
-      cx.notify();
     });
   }
 
@@ -256,9 +263,7 @@ export default class Spaces {
             .rounded_full()
             .border_1()
             .border_color(p.chrome)
-            .bg(p[st] ?? p.idle)
-            .when(st === "blocked" || st === "working", (d) =>
-              d.loop("opacity", { from: 0.45, to: 1, period: st === "blocked" ? 750 : 1200 })),
+            .bg(p[st] ?? p.idle),
         ),
       );
   }

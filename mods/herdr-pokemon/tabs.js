@@ -70,7 +70,7 @@ export default class Tabs {
     } else if (cmd === "style") {
       toggleStyleMode();
     } else if (cmd === "settings") {
-      openPokeDialog("settings", {}, { width: 520, height: 430 });
+      openPokeDialog("settings", {}, { width: 520, height: 488 });
     } else if (cmd === "new_menu") {
       openPokeNewMenu();
     } else if (cmd === "test_toast") {
@@ -192,8 +192,7 @@ export default class Tabs {
         .when(c.active && retro, (el) => el.child(svg(iconAsset("cursor")).size(7).flex_none().text_color(p.red)))
         .child(iconEl)
         .child(div().max_w(165).truncate().font_medium().child(c.zoomed ? `${name} [Z]` : name))
-        .when(c.status === "working", (el) => el.child(div().size(7).rounded_full().bg(p.working).loop("opacity", { from: 0.35, to: 1, period: 900 })))
-        .when(c.status === "blocked" || c.status === "done", (el) => el.child(div().size(7).rounded_full().bg(p[c.status])))
+        .when(c.status === "working" || c.status === "blocked" || c.status === "done", (el) => el.child(div().size(7).rounded_full().bg(p[c.status])))
         .when(c.active, (el) =>
           el.child(
             div()

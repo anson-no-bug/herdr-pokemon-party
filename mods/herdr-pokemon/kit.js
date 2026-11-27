@@ -21,6 +21,7 @@ export const SPACE_BALLS_KEY = "herdr-pokemon.space-balls";
 export const WIN_W_KEY = "herdr-pokemon.win-w";
 export const HABITAT_RELEASE_KEY = "herdr-pokemon.hab-release";
 export const HABITAT_RECALL_KEY = "herdr-pokemon.hab-recall";
+export const FX_MODE_KEY = "herdr-pokemon.fx-mode";
 
 // Global language preference ("zh" | "en" | "ja" | "ko", default "zh") — switches the entire Pokemon ecosystem cleanly!
 export const SUPPORTED_LANGS = ["zh", "en", "ja", "ko"];
@@ -65,6 +66,11 @@ export const fxGifAsset = (name) => `${ASSETS}/fx/${name}.gif`;
 export const styleMode = () => (shared(STYLE_KEY) === "retro" ? "retro" : "balanced");
 export const isRetro = () => styleMode() === "retro";
 export const toggleStyleMode = () => setShared(STYLE_KEY, isRetro() ? "balanced" : "retro");
+
+// Eco FX ("eco", default) eliminates constant ambient GPU loops for low idle GPU usage; "full" restores full ambient motion.
+export const fxMode = () => (shared(FX_MODE_KEY) === "full" ? "full" : "eco");
+export const isEcoFx = () => fxMode() !== "full";
+export const setFxMode = (next) => setShared(FX_MODE_KEY, next === "full" ? "full" : "eco");
 
 export const PIXEL_FONT = "Pixelated MS Sans Serif";
 export const BADGE_FONT = "Silkscreen";
@@ -210,9 +216,7 @@ export function hpBar(status, width = 42) {
         .w(fillW)
         .h(3)
         .rounded_full()
-        .bg(color)
-        .when(status === "working" || status === "blocked", (el) =>
-          el.loop("opacity", { from: 0.5, to: 1, period: status === "blocked" ? 700 : 1200 })),
+        .bg(color),
     );
 }
 
@@ -285,7 +289,7 @@ export function openHabitatPrefs() {
     kind: "popup",
     frame: "none",
     width: 320,
-    height: 262,
+    height: 316,
     props: { role: "dialog", kind: "habitat-prefs" },
   });
 }

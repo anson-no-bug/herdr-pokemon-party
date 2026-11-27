@@ -112,7 +112,7 @@
 
 - **~1.5 MB total repository** — all 7 biomes, 15 animated pixel FX GIFs, 10 Poké Balls, and full UI assets included.
 - **Strictly on-demand caching** — sprites, portraits, icons, and cries are downloaded only for currently active agents.
-- **Zero idle bloat** — hiding the habitat drops render overhead to zero; overworld roaming pauses during battles; token reading runs on demand only.
+- **Zero idle bloat & Eco FX default** — defaults to **Eco FX** (zero ambient GPU loops, auto-pauses when hidden or unfocused, switchable to **Full FX** in Habitat Settings); hiding the habitat drops render overhead to zero; overworld roaming pauses during battles; token reading runs on demand only.
 
 ---
 

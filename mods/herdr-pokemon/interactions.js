@@ -487,6 +487,7 @@ export class InteractionEngine2D {
         return null;
       };
 
+      const dodged = !isUlt && Math.random() < 0.16;
       if (dodged) {
         const dy = Math.random() < 0.5 ? -22 : 22;
         const step = safeStep(defHab, pDef, pDef.x, pDef.y + dy) ?? safeStep(defHab, pDef, pDef.x, pDef.y - dy);
@@ -869,6 +870,7 @@ export class InteractionEngine2D {
 
   tick(list, mons, ids, now, bounds, env = null) {
     let changed = false;
+    const socialGap = () => (env?.eco ? rand(28000, 45000) : rand(16000, 26000));
 
     const beforeFx = this.fx.length;
     this.fx = this.fx.filter((f) => now - f.born < f.dur);
@@ -919,24 +921,24 @@ export class InteractionEngine2D {
       else if (ev.kind === "train") res = now - ev.stageAt >= (ev.dur ?? 950) ? "done" : false;
 
       if (res === "done") {
-        // Scatter Pokemon back to their natural terrain habitats & wait 14–23s before the next social event!
+        // Scatter Pokemon back to their natural terrain habitats & wait before the next social event!
         if (ev.kind !== "train") {
           this.disperse(ev.participants, mons, ids, now, bounds, env);
         }
         this.events.splice(i, 1);
-        this.nextSocialAt = now + rand(14000, 23000);
+        this.nextSocialAt = now + socialGap();
         changed = true;
       } else if (res) {
         changed = true;
       }
     }
 
-    // Lively, balanced social cadence (~14–23s between multi-Pokemon activities)
+    // Lively, balanced social cadence between multi-Pokemon activities
     // Battle (38%, guaranteed after 3 non-battle events!), Tag (22%), Gather (22%), Race (12%), Solo (6%)
     if (now >= this.nextSocialAt && this.events.length === 0) {
       const free = list.filter((a) => mons[a.address] && !mons[a.address].grabbed && a.status !== "blocked" && mons[a.address].mood !== "sleep" && !this.isBusy(a.address));
       if (free.length >= 2) {
-        this.nextSocialAt = now + rand(14000, 23000);
+        this.nextSocialAt = now + socialGap();
         const forceBattle = this.nonBattleStreak >= 3;
         const roll = Math.random();
         let started = false;
@@ -963,10 +965,10 @@ export class InteractionEngine2D {
         }
         if (started) changed = true;
       } else if (free.length === 1 && free[0].status === "working") {
-        this.nextSocialAt = now + rand(24000, 38000);
+        this.nextSocialAt = now + (env?.eco ? rand(32000, 48000) : rand(24000, 38000));
         if (this.startSoloBreak(free[0], mons, ids, now, bounds, env)) changed = true;
       } else {
-        this.nextSocialAt = now + rand(14000, 22000);
+        this.nextSocialAt = now + (env?.eco ? rand(24000, 36000) : rand(14000, 22000));
       }
     }
 

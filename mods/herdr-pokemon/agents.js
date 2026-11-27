@@ -6,7 +6,7 @@
 
 import { div, image, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { agents, terminals, panes, focused, spaces, run, setAgentOrder, checking } from "herdr";
+import { agents, terminals, panes, focused, spaces, run, setAgentOrder, window, checking } from "herdr";
 import {
   palette, applyUiFont, tr, hpBar, iconAsset, isSidebarNarrow, openPokePicker,
 } from "./kit.js";
@@ -59,7 +59,7 @@ export default class Agents {
     this.hovered = null;
     try { this.changed = JSON.parse(localStorage.getItem("poke.changed") ?? "{}"); }
     catch { this.changed = {}; }
-    if (!checking()) cx.timer.every(30000, (cx) => cx.notify());
+    if (!checking()) cx.timer.every(30000, (cx) => { if (window()?.visible !== false) cx.notify(); });
   }
 
   track(list, now) {
